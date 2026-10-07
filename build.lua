@@ -273,14 +273,12 @@ do
                 <span aria-hidden="true" class="ms-sp-band top"></span><span aria-hidden="true" class="ms-sp-band bot"></span>
                 <span aria-hidden="true" class="ms-sp-title"><span>%s</span></span>%s
               </a>%s
-              <div class="ms-tip" role="tooltip" hidden><div class="ms-tip-title">%s</div><div class="ms-tip-meta">%s · %s</div><span class="ms-tip-arrow"></span></div>
             </li>]],
       b.id, entry.w, entry.h, entry.href, esc(b.title), esc(b.system), STATUS_PT[status] or "",
       sp.color, sp.ink, sp.light, sp.band, esc(b.title),
       entry.emblem and '\n                <span aria-hidden="true" class="ms-sp-emblem"></span>' or "",
       status == "andamento" and '\n              <span aria-hidden="true" class="ms-ribbon"></span>'
-        or status == "rascunho" and '\n              <span aria-hidden="true" class="ms-draft1"></span><span aria-hidden="true" class="ms-draft2"></span>' or "",
-      esc(b.title), esc(b.system), (status:gsub("^%l", string.upper)):gsub("Andamento", "Em andamento"))
+        or status == "rascunho" and '\n              <span aria-hidden="true" class="ms-draft1"></span><span aria-hidden="true" class="ms-draft2"></span>' or "")
   end
   spines[#spines + 1] = [[
             <li class="ms-empty" style="height:168px;">

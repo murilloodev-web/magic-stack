@@ -30,6 +30,17 @@ a:hover { color: #dfe7d9; }
   overflow-x: visible; scroll-snap-type: none; scrollbar-width: thin; scrollbar-color: #5a4232 #2a1d17; background: transparent; }
 .ms-row-gap { height: 16px; }
 
+/* bookcases side by side: scroll sideways for more shelves */
+.ms-cases { display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none;
+  padding-top: 28px; margin-top: -28px; overscroll-behavior-x: contain; }
+.ms-cases::-webkit-scrollbar { display: none; }
+.ms-casepage { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+.ms-pager { position: relative; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 14px; margin: -6px 0 10px; }
+.ms-pg-label { font-family: 'Silkscreen', monospace; font-size: 10px; letter-spacing: .06em; color: #dfe7d9; background: #2a1d17; padding: 4px 8px; }
+.ms-pg { border: 0; cursor: pointer; background: #f3b04a; color: #2a1d17; font-family: 'Silkscreen', monospace; font-size: 12px; width: 32px; height: 28px; box-shadow: inset -3px -3px 0 #e27a3f, 0 0 0 2px #0b0b14; }
+.ms-pg:disabled { background: #5a4232; color: #8a6a44; box-shadow: 0 0 0 2px #0b0b14; cursor: default; }
+.ms-pg:focus-visible { outline: 4px solid #dfe7d9; outline-offset: 2px; }
+
 /* spines */
 .ms-book { position: relative; flex: none; scroll-snap-align: start; transition: transform 120ms steps(3); z-index: 1; }
 .ms-book.is-lift { transform: translateY(-10px); }
@@ -50,7 +61,7 @@ a:hover { color: #dfe7d9; }
 .ms-ribbon { position: absolute; top: -14px; left: 30%; width: 6px; height: 30px; background: #b8433e; box-shadow: inset -2px 0 0 #7a2f45; pointer-events: none; }
 .ms-draft1 { position: absolute; top: -10px; left: 4px; right: 8px; height: 12px; background: #dfe7d9; box-shadow: inset 0 -2px 0 #9fa8a6; pointer-events: none; }
 .ms-draft2 { position: absolute; top: -6px; left: 10px; right: 2px; height: 10px; background: #9fa8a6; pointer-events: none; }
-.ms-tip { position: absolute; left: 50%; bottom: calc(100% + 18px); transform: translateX(-50%); width: 230px; background: #15162a; color: #dfe7d9; padding: 10px 12px;
+.ms-tip { position: absolute; transform: translate(-50%, -100%); width: 230px; background: #15162a; color: #dfe7d9; padding: 10px 12px;
   box-shadow: 0 -4px 0 #8e8aae, 0 4px 0 #8e8aae, -4px 0 0 #8e8aae, 4px 0 0 #8e8aae; pointer-events: none; z-index: 10; display: flex; flex-direction: column; gap: 6px; }
 .ms-tip-title { font-family: 'Pirata One', serif; font-size: 21px; line-height: 1.05; }
 .ms-tip-meta { font-family: 'Silkscreen', monospace; font-size: 10px; letter-spacing: .04em; color: #8e8aae; text-transform: uppercase; }
@@ -179,18 +190,29 @@ a:hover { color: #dfe7d9; }
 @media (max-width: 599px) {
   .only-desktop { display: none; }
   .only-mobile { display: inline; }
-  .ms-wall { flex-direction: column; align-items: stretch; padding: 112px 16px 0; }
-  .ms-case { width: 100%; }
-  .ms-row { height: 196px; overflow-x: auto; scroll-snap-type: x mandatory; }
+  .ms-root { min-height: 100vh; min-height: 100svh; }
+  .ms-wall { flex: none; flex-direction: column; align-items: stretch; padding: 96px 16px 0; }
+  .ms-case { flex: none; width: 100%; }
+  .ms-row { height: var(--row-h, 196px); overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; padding-top: 16px; }
+  .ms-row-gap { height: 12px; }
   .ms-spine { touch-action: pan-x; }
   .ms-side { display: none; }
-  .ms-table { gap: 28px; padding: 36px 16px 72px; min-height: 300px; }
-  .ms-group { gap: 52px; }
+  .ms-table { flex: 1 0 auto; gap: 12px; padding: 16px 16px 16px; min-height: 0; align-content: flex-start; }
+  .ms-group { gap: 52px; zoom: var(--gs, 1); }
   .ms-cardslot { width: 100%; min-height: 0; }
-  .ms-hint { position: relative; bottom: 24px; text-align: center; }
-  .ms-hint-mobile { display: block; }
-  .ms-card { position: relative; bottom: 0; }
-  .ms-card-keys { display: none; }
+  .ms-hint { position: relative; bottom: 0; text-align: center; gap: 6px; }
+  .ms-hint-mobile { display: block; font-size: 17px; line-height: 1.3; }
+  .ms-hint-text { font-size: 17px; line-height: 1.3; }
+  .ms-card { position: relative; bottom: 0; padding: 12px 14px 10px; gap: 6px; }
+  .ms-card h2 { font-size: 24px; }
+  .ms-card p { font-size: 15px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .ms-card dl, .ms-card-keys { display: none; }
+  .ms-card-actions { gap: 10px; padding-top: 2px; }
+  .ms-btn { font-size: 13px; padding: 10px 14px 12px; }
   .ms-spread { grid-template-columns: 1fr; }
   .ms-page.l { min-height: 0; }
+}
+@media (max-width: 599px) and (max-height: 719px) {
+  .ms-hint-mobile { display: none; }
+  .ms-wall { padding-top: 88px; }
 }

@@ -40,34 +40,122 @@ const announce = (t) => { E.live.textContent = t; };
 const spineEl = (id) => document.querySelector(`.ms-book[data-id="${id}"] .ms-spine`);
 const spineCenter = (id) => { const el = spineEl(id); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
 
-// ---------------- shelf rows ----------------
-function arrangeRows() {
-  const mobile = isMobile();
-  const k = mobile ? 0.85 : 1;
-  const caseW = Math.min(780, window.innerWidth * 0.6) - 72;
-  const cap = mobile ? Infinity : Math.max(4, Math.floor((caseW - 80) / 48));
-  if (mobile === mobileNow && cap === capNow) return;
-  mobileNow = mobile; capNow = cap;
-  const items = Array.from(E.nav.querySelectorAll('.ms-book, .ms-empty'));
-  items.forEach((li) => {
+// ---------------- shelf rows and bookcases ----------------
+// Desktop: books fill bookcases of two shelves, leaving room for the props
+// (row 1 up to 68 % of its width, row 2 up to 46 %). More books than fit open
+// another bookcase to the side, reached by scrolling sideways or with the
+// arrows under the shelf. Phone: one shelf that scrolls sideways.
+let layoutKey = null, mobileK = 0.85, pager = null, cases = null, scrollTimer = null;
+const ROW_LIMITS = [0.68, 0.46];
+
+function sizeSpines(k) {
+  E.nav.querySelectorAll('.ms-book, .ms-empty').forEach((li) => {
     if (li.classList.contains('ms-book')) {
       const b = book(li.dataset.id);
       li.style.width = Math.round(b.w * k) + 'px'; li.style.height = Math.round(b.h * k) + 'px';
-    } else li.style.height = Math.round(168 * k) + 'px';
+    } else { li.style.width = Math.round(44 * Math.min(1, k / 0.85)) + 'px'; li.style.height = Math.round(168 * k) + 'px'; }
   });
-  const chunks = [];
-  if (mobile) chunks.push(items);
-  else {
-    for (let i = 0; i < items.length; i += cap) chunks.push(items.slice(i, i + cap));
-    if (chunks.length < 2) chunks.push([]);
-  }
-  E.nav.replaceChildren(...chunks.map((c) => {
-    const wrap = document.createElement('div'); wrap.className = 'ms-rowwrap';
-    const ul = document.createElement('ul'); ul.className = 'ms-row'; ul.append(...c);
-    const gap = document.createElement('div'); gap.className = 'ms-row-gap'; gap.setAttribute('aria-hidden', 'true');
-    wrap.append(ul, gap); return wrap;
-  }));
 }
+function rowEl(items) {
+  const wrap = document.createElement('div'); wrap.className = 'ms-rowwrap';
+  const ul = document.createElement('ul'); ul.className = 'ms-row'; ul.append(...items);
+  const gap = document.createElement('div'); gap.className = 'ms-row-gap'; gap.setAttribute('aria-hidden', 'true');
+  wrap.append(ul, gap); return wrap;
+}
+function arrangeRows() {
+  const mobile = isMobile();
+  const k = mobile ? mobileK : 1;
+  const navW = E.nav.clientWidth;
+  const key = `${mobile}|${k.toFixed(3)}|${mobile ? 0 : Math.round(navW)}`;
+  if (key === layoutKey) return;
+  layoutKey = key;
+  const items = Array.from(E.nav.querySelectorAll('.ms-book, .ms-empty'));
+  sizeSpines(k);
+  if (mobile) {
+    E.nav.replaceChildren(rowEl(items));
+    cases = null; updatePager(); return;
+  }
+  const rowW = Math.max(200, navW - 32 - 40);
+  const pages = []; let cur = [[], []], r = 0, acc = 0;
+  for (const li of items) {
+    const w = parseFloat(li.style.width) + 4;
+    if (acc + w > rowW * ROW_LIMITS[r] && cur[r].length) {
+      r += 1; acc = 0;
+      if (r > 1) { pages.push(cur); cur = [[], []]; r = 0; }
+    }
+    cur[r].push(li); acc += w;
+  }
+  pages.push(cur);
+  cases = document.createElement('div'); cases.className = 'ms-cases';
+  pages.forEach((pg, i) => {
+    const page = document.createElement('div'); page.className = 'ms-casepage';
+    page.setAttribute('aria-label', `Estante ${i + 1} de ${pages.length}`);
+    page.append(rowEl(pg[0]), rowEl(pg[1]));
+    cases.append(page);
+  });
+  cases.addEventListener('scroll', onCasesScroll, { passive: true });
+  cases.addEventListener('scrollend', () => { clearTimeout(scrollTimer); updatePager(); laySig = null; schedulePaint(); });
+  E.nav.replaceChildren(cases);
+  updatePager();
+}
+function updatePager() {
+  const n = cases ? cases.children.length : 1;
+  if (!pager) {
+    pager = document.createElement('div'); pager.className = 'ms-pager';
+    pager.innerHTML = '<button type="button" class="ms-pg prev" aria-label="Estante anterior">◀</button><span class="ms-pg-label" aria-live="polite"></span><button type="button" class="ms-pg next" aria-label="Próxima estante">▶</button>';
+    pager.querySelector('.prev').addEventListener('click', () => turnCase(-1));
+    pager.querySelector('.next').addEventListener('click', () => turnCase(1));
+    E.nav.after(pager);
+  }
+  pager.hidden = n < 2;
+  if (n < 2) return;
+  const i = Math.round(cases.scrollLeft / Math.max(1, cases.clientWidth));
+  pager.querySelector('.ms-pg-label').textContent = `ESTANTE ${i + 1} DE ${n}`;
+  pager.querySelector('.prev').disabled = i === 0;
+  pager.querySelector('.next').disabled = i >= n - 1;
+}
+function turnCase(dir) {
+  if (!cases) return;
+  cases.scrollBy({ left: dir * cases.clientWidth, behavior: isReduced() ? 'auto' : 'smooth' });
+}
+function onCasesScroll() {
+  hideTip();
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => { updatePager(); laySig = null; schedulePaint(); }, 160);
+}
+const inNav = (el) => {
+  const n = E.nav.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return r.left >= n.left - 2 && r.right <= n.right + 2;   // only the bookcase fully in view
+};
+
+// Phone: shrink the shelf and the table so the whole room fits the screen.
+function fitMobile() {
+  if (!isMobile()) { E.root.style.removeProperty('--row-h'); E.root.style.removeProperty('--gs'); mobileK = 0.85; return; }
+  const H = window.innerHeight;
+  const info = (E.card.hidden ? E.hint : E.card).offsetHeight;
+  const top = parseFloat(getComputedStyle(document.querySelector('.ms-wall')).paddingTop) || 96;
+  const fixed = top + 40 + 12 + 16 + 12 + 16 + info;   // top space, crown, row gap, table padding and gap, hint/card
+  const rowH = Math.max(132, Math.min(196, H - fixed - 200));
+  const gs = Math.max(0.55, Math.min(1, (H - fixed - rowH) / 200));
+  E.root.style.setProperty('--row-h', rowH + 'px');
+  E.root.style.setProperty('--gs', gs.toFixed(3));
+  mobileK = 0.85 * rowH / 196;
+}
+function relayout() { fitMobile(); arrangeRows(); updateSpines(); schedulePaint(); }
+
+// Hover summary over a spine (one shared element, so the scrolling shelf never clips it)
+const tipEl = document.createElement('div');
+tipEl.className = 'ms-tip'; tipEl.setAttribute('role', 'tooltip'); tipEl.hidden = true;
+E.root.append(tipEl);
+function showTip(id) {
+  const b = book(id), sp = spineEl(id); if (!b || !sp) return;
+  tipEl.innerHTML = `<div class="ms-tip-title">${esc(b.title)}</div><div class="ms-tip-meta">${esc(b.system)} · ${STATUS[b.status]}</div><span class="ms-tip-arrow"></span>`;
+  const rr = E.root.getBoundingClientRect(), r = sp.getBoundingClientRect();
+  tipEl.style.left = (r.left + r.width / 2 - rr.left) + 'px';
+  tipEl.style.top = (r.top - rr.top - 10) + 'px';
+  tipEl.hidden = false;
+}
+function hideTip() { tipEl.hidden = true; }
 
 // ---------------- render: spines, circle, cover, card, drag, mini ----------------
 function updateSpines() {
@@ -79,8 +167,9 @@ function updateSpines() {
     li.classList.toggle('is-gone', hidden);
     li.classList.toggle('is-lift', S.hoverId === id && !S.drag && !reduced);
     li.classList.toggle('is-tip', tip);
-    li.querySelector('.ms-tip').hidden = !tip;
   });
+  const tipId = !mobile && S.hoverId && !S.drag && S.hoverId !== S.placedId ? S.hoverId : null;
+  if (tipId) showTip(tipId); else hideTip();
 }
 
 function updateCircle() {
@@ -262,12 +351,12 @@ function rootRel(el) {
 function measure() {
   const rr = E.root.getBoundingClientRect();
   const rel = (el) => { const c = rootRel(el); return c ? { x: Math.round(c.x / PX), y: Math.round(c.y / PX), w: Math.round(c.w / PX), h: Math.round(c.h / PX) } : null; };
-  const spines = Array.from(document.querySelectorAll('.ms-book:not(.is-gone) .ms-spine')).map(rel).filter(Boolean);
+  const spines = Array.from(document.querySelectorAll('.ms-book:not(.is-gone) .ms-spine')).filter(inNav).map(rel).filter(Boolean);
   return {
     W: Math.ceil(rr.width / PX), H: Math.ceil(E.root.scrollHeight / PX),
     table: rel(E.table), nav: rel(E.nav), crown: rel(E.crown), win: rel(E.win),
     lamp: rel(propEls.lamp && !propEls.lamp.hidden ? propEls.lamp : null), cardSlot: rel(E.slot), zone: rel(E.zone),
-    rows: Array.from(E.nav.querySelectorAll('ul')).map(rel).filter(Boolean), spines,
+    rows: Array.from(E.nav.querySelectorAll('ul')).filter(inNav).map(rel).filter(Boolean), spines,
   };
 }
 function schedulePaint() {
@@ -275,7 +364,7 @@ function schedulePaint() {
   paintRaf = requestAnimationFrame(() => {
     paintRaf = null;
     try {
-      const lay = { rows: Array.from(E.nav.querySelectorAll('ul')).map(rootRel).filter(Boolean), table: rootRel(E.table), zone: rootRel(E.zone) };
+      const lay = { rows: Array.from(E.nav.querySelectorAll('ul')).filter(inNav).map(rootRel).filter(Boolean), table: rootRel(E.table), zone: rootRel(E.zone) };
       const ls = JSON.stringify(lay);
       if (ls !== laySig) { laySig = ls; S.lay = lay; renderProps(); renderBeams(); }
       const R = measure();
@@ -306,7 +395,7 @@ function place(id, from) {
   S.magicColor = MAGIC[Math.floor(Math.random() * MAGIC.length)];
   S.placedId = id; S.drag = null; S.hoverId = null;
   announce(`${b.title} está na mesa. Enter abre, Esc devolve à estante.`);
-  renderPlaced(); updateSpines(); updateDragUI(); updateCircle(); pulse(false); schedulePaint();
+  renderPlaced(); updateSpines(); updateDragUI(); updateCircle(); pulse(false); relayout();
   if (was !== id) requestAnimationFrame(animateLanding);
 }
 
@@ -335,7 +424,7 @@ function cleared(id) {
   S.placedId = null;
   announce(`${b ? b.title : 'O livro'} voltou à estante.`);
   try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
-  renderPlaced(); updateSpines(); updateCircle(); schedulePaint();
+  renderPlaced(); updateSpines(); updateCircle(); relayout();
   setTimeout(() => { const sp = spineEl(id); if (sp) sp.focus({ preventScroll: true }); }, 30);
 }
 
@@ -426,6 +515,7 @@ function propMove(e) {
     document.querySelectorAll('.ms-book').forEach((li) => {
       if (lampBook) return;
       const id = li.dataset.id, r = li.querySelector('.ms-spine').getBoundingClientRect();
+      if (!inNav(li)) return;
       if (S.placedId !== id && e.clientX >= r.left - 10 && e.clientX <= r.right + 10 && e.clientY >= r.top - 40 && e.clientY <= r.bottom + 10) lampBook = id;
     });
   }
@@ -510,7 +600,7 @@ function handleKey(e) {
 }
 
 // ---------------- boot ----------------
-document.querySelectorAll('.ms-book').forEach((li) => {
+function wireSpine(li) {
   const id = li.dataset.id, a = li.querySelector('.ms-spine');
   a.addEventListener('click', (e) => { e.preventDefault(); if (justDragged) return; place(id, spineCenter(id)); });
   a.addEventListener('keydown', (e) => { if (e.key === ' ') { e.preventDefault(); place(id, spineCenter(id)); } });
@@ -519,22 +609,59 @@ document.querySelectorAll('.ms-book').forEach((li) => {
   const leave = () => { if (S.hoverId === id) { S.hoverId = null; updateSpines(); } };
   a.addEventListener('mouseenter', enter); a.addEventListener('mouseleave', leave);
   a.addEventListener('focus', enter); a.addEventListener('blur', leave);
-});
+}
+document.querySelectorAll('.ms-book').forEach(wireSpine);
+
+// ?demo fills the shelf with sample books (from the design) to preview several bookcases
+function maybeDemo() {
+  if (!/[?&]demo\b/.test(location.search)) return;
+  const DEMO = [
+    ['feira-dos-afogados', 'A Feira dos Afogados', 'Tormenta20', 'andamento', '#7a2f45', '#b8433e', '#f3b04a', '#dfe7d9', 38, 168, 3],
+    ['farol-queimada', 'O Farol de Queimada Grande', 'Call of Cthulhu 7e', 'completo', '#1f1f3d', '#3b3860', '#dfe7d9', '#dfe7d9', 48, 176, 7],
+    ['sal-e-ferro', 'Sal e Ferro', 'D&D 5e', 'rascunho', '#8e8aae', '#dfe7d9', '#3b3860', '#15162a', 30, 150, 0],
+    ['coroa-de-cinzas', 'Coroa de Cinzas', 'Old Dragon 2e', 'completo', '#3e4a2c', '#9dbb6a', '#f3b04a', '#dfe7d9', 40, 188, 12],
+    ['sinos-ouro-preto', 'Os Sinos de Ouro Preto', 'Ordem Paranormal', 'completo', '#4a2a55', '#7a2f45', '#e27a3f', '#dfe7d9', 36, 160, 2],
+    ['rio-sem-volta', 'Mapa do Rio Sem Volta', 'Savage Worlds', 'andamento', '#5a4232', '#7a5a3e', '#dfe7d9', '#dfe7d9', 44, 172, 1],
+    ['carta-do-barao', 'A Última Carta do Barão', 'Call of Cthulhu 7e', 'completo', '#b8433e', '#e27a3f', '#15162a', '#0b0b14', 34, 180, 5],
+    ['ninho-de-vespas', 'Ninho de Vespas', 'Tormenta20', 'rascunho', '#9fa8a6', '#dfe7d9', '#7a2f45', '#15162a', 32, 144, 0],
+    ['lanternas-pantano', 'Lanternas no Pântano', 'D&D 5e', 'completo', '#262543', '#3b3860', '#9dbb6a', '#dfe7d9', 46, 186, 9],
+    ['inventario-mago', 'O Inventário do Mago Morto', 'Old Dragon 2e', 'andamento', '#3a2a22', '#5a4232', '#f3b04a', '#dfe7d9', 40, 164, 4],
+    ['vila-rica', 'Quatro Estações em Vila Rica', 'GURPS', 'completo', '#15162a', '#3b3860', '#b8433e', '#dfe7d9', 50, 178, 6],
+  ];
+  const empty = E.nav.querySelector('.ms-empty');
+  for (let round = 0; round < 2; round++) DEMO.forEach(([id, title, system, status, color, light, band, ink, w, h, contributors]) => {
+    const b = { id: id + '-' + round, title, system, status, color, light, band, ink, w, h, contributors, emblem: false,
+      period: '—', place: '—', author: 'Livro de exemplo', kicker: system, labels: false,
+      synopsis: 'Livro de exemplo, só para ver a estante com vários títulos, sistemas e estados.',
+      toc: [{ s: 'Livro de exemplo', p: 'O sumário vem do book.lua de cada livro.' }], href: '#', contribHref: '#' };
+    BOOKS.push(b);
+    const li = document.createElement('li');
+    li.className = 'ms-book'; li.dataset.id = b.id;
+    li.innerHTML = `<a class="ms-spine" href="#" draggable="false" aria-label="${esc(title)}, ${esc(system)}, ${STATUS[status].toLowerCase()}" style="--c:${color}; --ink:${ink}; --light:${light}; --band:${band};">`
+      + '<span aria-hidden="true" class="ms-sp-line top"></span><span aria-hidden="true" class="ms-sp-line bot"></span>'
+      + '<span aria-hidden="true" class="ms-sp-band top"></span><span aria-hidden="true" class="ms-sp-band bot"></span>'
+      + `<span aria-hidden="true" class="ms-sp-title"><span>${esc(title)}</span></span></a>`
+      + (status === 'andamento' ? '<span aria-hidden="true" class="ms-ribbon"></span>' : '')
+      + (status === 'rascunho' ? '<span aria-hidden="true" class="ms-draft1"></span><span aria-hidden="true" class="ms-draft2"></span>' : '');
+    empty.before(li); wireSpine(li);
+  });
+}
 E.cover.addEventListener('pointerdown', onCoverDown);
 E.cover.addEventListener('dblclick', open);
 window.addEventListener('pointermove', handleMove);
 window.addEventListener('pointerup', handleUp);
 window.addEventListener('pointercancel', handleUp);
 window.addEventListener('keydown', handleKey);
-window.addEventListener('resize', () => { arrangeRows(); updateSpines(); schedulePaint(); });
+window.addEventListener('resize', relayout);
 window.addEventListener('pageshow', (e) => { if (e.persisted && S.opened) closeOpened(); });
 
-arrangeRows();
+maybeDemo();
 try {
   const last = localStorage.getItem(KEY);
   if (last && book(last)) { skipLand = true; S.placedId = last; }
 } catch (e) { /* ignore */ }
-renderPlaced(); updateSpines(); updateDragUI(); updateCircle();
+renderPlaced(); updateDragUI(); updateCircle(); relayout();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
 if (window.ResizeObserver) new ResizeObserver(() => schedulePaint()).observe(E.root);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { sig = null; schedulePaint(); });
 setInterval(tickFog, 140);
