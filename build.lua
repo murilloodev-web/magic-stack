@@ -221,36 +221,104 @@ local function shell(title, desc, body, extra_head)
     esc(site.title), esc(site.owner), esc(site.repo_url))
 end
 
--- Shelf — provisional and functional. The interactive shelf-and-table
--- version is being designed separately (see DESIGN-BRIEF.md).
+-- Shelf and table (index.html). Ported from the Claude Design file
+-- "Estante e Mesa v2": build.lua writes the spines and the book data,
+-- shelf/shelf.paint.js + shelf/shelf.app.js run the room in the browser.
 do
+  local STATUS = { complete = "completo", ["in-progress"] = "andamento", draft = "rascunho" }
+  local STATUS_PT = { completo = "completo", andamento = "em andamento", rascunho = "rascunho" }
+  local shelf_books = {}
   local spines = {}
   for _, b in ipairs(books) do
+    local m, sp = manifests[b.id], b.spine or {}
+    -- table of contents: each section with its page titles
+    local toc, by_section = {}, {}
+    for _, p in ipairs(m.pages) do
+      by_section[p.section] = by_section[p.section] or {}
+      table.insert(by_section[p.section], p.title)
+    end
+    for _, sec in ipairs(m.sections) do
+      if by_section[sec] then toc[#toc + 1] = { s = sec, p = table.concat(by_section[sec], " · ") } end
+    end
+    -- where "Contribuir" leads: the book's chosen page, else the first page that takes contributions
+    local cpage = b.contrib_page
+    if not cpage then for _, p in ipairs(m.pages) do if #p.templates > 0 then cpage = p.id; break end end end
+    local cover
+    if b.cover then
+      cover = read("books/" .. b.id .. "/" .. b.cover):gsub("<!%-%-.-%-%->%s*", "")
+        :gsub("{{AUTHOR}}", function() return esc(b.author:upper()) end)
+    end
+    local credits_file = "books/" .. b.id .. "/credits.lua"
+    local contributors = file_exists(credits_file) and #dofile(credits_file) or 0
+    local status = STATUS[b.status]
+    if not status then fail("%s: status must be complete, in-progress or draft", b.id) end
+    for _, k in ipairs({ "color", "light", "band", "ink" }) do
+      if not (sp[k] or ""):match("^#%x%x%x%x%x%x$") then fail("%s: spine.%s must be a #rrggbb colour", b.id, k) end
+    end
+    local entry = {
+      id = b.id, title = b.title, system = b.system, status = status,
+      period = b.period or "—", place = b.place or "—", author = b.author,
+      kicker = b.kicker or b.system, synopsis = b.blurb or "", contributors = contributors,
+      color = sp.color, light = sp.light, band = sp.band, ink = sp.ink,
+      w = sp.w or 40, h = sp.h or 170, emblem = sp.emblem or false, labels = b.labels or false,
+      magic = b.magic, toc = toc, coverHtml = cover,
+      href = b.id .. "/index.html",
+      contribHref = cpage and ("contribute.html?book=" .. b.id .. "&page=" .. cpage) or (b.id .. "/index.html"),
+    }
+    shelf_books[#shelf_books + 1] = entry
     spines[#spines + 1] = string.format([[
-<li class="book" style="--spine:%s;--spine-accent:%s;--spine-label:%s">
-  <a href="%s/index.html">
-    <span class="spine" aria-hidden="true"><span class="spine-title">%s</span></span>
-    <span class="book-info">
-      <strong>%s</strong>
-      <span class="book-meta">%s · %s</span>
-      <span class="book-blurb">%s</span>
-      <span class="book-by">by %s</span>
-    </span>
-  </a>
-</li>]], b.spine.base, b.spine.accent, b.spine.label, b.id, esc(b.title), esc(b.title),
-      esc(b.system), esc(b.subtitle or b.genre or ""), esc(b.blurb or ""), esc(b.author))
+            <li class="ms-book" data-id="%s" style="width:%dpx; height:%dpx;">
+              <a class="ms-spine" href="%s" draggable="false" aria-label="%s, %s, %s" style="--c:%s; --ink:%s; --light:%s; --band:%s;">
+                <span aria-hidden="true" class="ms-sp-line top"></span><span aria-hidden="true" class="ms-sp-line bot"></span>
+                <span aria-hidden="true" class="ms-sp-band top"></span><span aria-hidden="true" class="ms-sp-band bot"></span>
+                <span aria-hidden="true" class="ms-sp-title"><span>%s</span></span>%s
+              </a>%s
+              <div class="ms-tip" role="tooltip" hidden><div class="ms-tip-title">%s</div><div class="ms-tip-meta">%s · %s</div><span class="ms-tip-arrow"></span></div>
+            </li>]],
+      b.id, entry.w, entry.h, entry.href, esc(b.title), esc(b.system), STATUS_PT[status] or "",
+      sp.color, sp.ink, sp.light, sp.band, esc(b.title),
+      entry.emblem and '\n                <span aria-hidden="true" class="ms-sp-emblem"></span>' or "",
+      status == "andamento" and '\n              <span aria-hidden="true" class="ms-ribbon"></span>'
+        or status == "rascunho" and '\n              <span aria-hidden="true" class="ms-draft1"></span><span aria-hidden="true" class="ms-draft2"></span>' or "",
+      esc(b.title), esc(b.system), (status:gsub("^%l", string.upper)):gsub("Andamento", "Em andamento"))
   end
-  local body = table.concat({
-    '<section class="shelf-hero">',
-    string.format('<h1>%s</h1><p class="lede">%s</p>', esc(site.title), esc(site.tagline)),
-    '</section>',
-    '<section class="shelf" aria-label="Books"><ul class="books">', table.concat(spines, "\n"), '</ul></section>',
-    '<section class="how"><h2>Add to the stories</h2>',
-    '<p>Every page of every book has a <strong>Contribute</strong> button. It opens a short form for that part of the story: a character, a place, a scene, an ending, a source. ',
-    'The author reviews each one, and accepted contributions are credited in the book. ',
-    '<a href="terms.html">How credit and consent work</a>.</p></section>',
-  }, "\n")
-  write("index.html", shell(site.title .. " — a shelf of RPG stories", site.tagline, body))
+  spines[#spines + 1] = [[
+            <li class="ms-empty" style="height:168px;">
+              <a href="propor-livro.html" aria-label="Sua história aqui: como propor um livro novo"><span>Sua história aqui</span></a>
+            </li>]]
+  if #errors > 0 then
+    io.stderr:write("\nShelf failed:\n")
+    for _, e in ipairs(errors) do io.stderr:write("  • " .. e .. "\n") end
+    os.exit(1)
+  end
+  local data = json.encode({ books = shelf_books, circle = site.shelf_circle or "system", fog = site.shelf_fog ~= false })
+    :gsub("</", "<\\/")
+  local html = read("shelf/shelf.html")
+  local fills = { TITLE = esc(site.title .. " — uma estante de histórias de RPG"), TAGLINE = esc(site.tagline),
+    SITE = esc(site.title), REPO = esc(site.repo_url), SPINES = table.concat(spines, "\n"), DATA = data }
+  html = html:gsub("{{(%u+)}}", function(k) return fills[k] end)
+  write("index.html", html)
+  write("shelf.css", read("shelf/shelf.css"))
+  write("shelf.js", "// Magic Stack shelf — generated by build.lua from shelf/shelf.paint.js and shelf/shelf.app.js\n"
+    .. "(function () {\n'use strict';\n" .. read("shelf/shelf.paint.js") .. "\n" .. read("shelf/shelf.app.js") .. "\n})();\n")
+
+  -- "Sua história aqui": how to propose a new book
+  local body = [[
+<div class="terms prose">
+<h1>Propor um livro</h1>
+<p class="lede">O Magic Stack é uma estante aberta. Além de contribuir com as histórias que já estão nela, você pode propor um livro inteiro seu.</p>
+<h2>Como funciona</h2>
+<ul>
+<li><strong>Livros e páginas novas</strong> entram por um <em>pull request</em> no GitHub. Cada livro é uma pasta em <code>books/</code>, com a história escrita como dados em Lua, como em <a href="mist-over-the-funicular/index.html">The Mist over the Funicular</a>.</li>
+<li>Copie a pasta do Mist, troque o conteúdo pelo seu, acrescente o livro em <code>library.lua</code> e rode <code>lua build.lua</code>. O build avisa o que estiver faltando ou inconsistente.</li>
+<li>Qualquer sistema serve: Call of Cthulhu, Tormenta20, D&amp;D, Old Dragon, Ordem Paranormal ou o seu.</li>
+<li>Todo livro proposto passa pela revisão do autor da estante antes de entrar, e segue o mesmo <a href="terms.html">Termo de Contribuição</a>.</li>
+</ul>
+<h2>Sem GitHub?</h2>
+<p>Comece contribuindo com uma história existente: cada página tem um botão <strong>Contribuir</strong> que abre um formulário simples. Se quiser propor um livro inteiro e não usa GitHub, escreva para o contato do <a href="terms.html">termo</a>.</p>
+<p><a href="]] .. esc(site.repo_url) .. [[">Ver o código no GitHub</a> · <a href="index.html">← Voltar à estante</a></p>
+</div>]]
+  write("propor-livro.html", shell("Propor um livro · " .. site.title, "Como propor um livro novo para a estante do Magic Stack.", body))
 end
 
 -- Contribution form page (rendered client-side from forms.json)

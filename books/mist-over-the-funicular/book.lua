@@ -12,8 +12,16 @@ return {
   lang     = "en",
   status   = "complete",     -- complete | in-progress | draft
   blurb    = "In 1974 the government begins closing a century-old mountain railway to save money. Nobody told it what the railway was really carrying.",
-  -- spine colours for the provisional shelf (Claude Design will replace the shelf)
-  spine    = { base = "#2e2550", accent = "#9b6bd6", label = "#dfe7d9" },
+  -- shelf card and the open-book spread
+  period   = "Maio–julho de 1974",
+  place    = "Paranapiacaba, SP",
+  kicker   = "A Call of Cthulhu 7th Edition scenario · Paranapiacaba, Brazil · May–July 1974",
+  labels   = true,           -- the book tags every page History / Fiction / History + Fiction
+  -- spine on the shelf (pixels at 1×) and the cover on the table
+  spine    = { color = "#2e2550", light = "#3b3860", band = "#8e8aae", ink = "#dfe7d9",
+               w = 44, h = 184, emblem = true },
+  cover    = "cover.html",   -- hand-made cover art; books without one get a generic cover
+  contrib_page = "synopsis", -- where "Contribuir" on the table card leads
   open_contributions = true,
 
   -- Which forms the "Contribute" buttons open. A page gets the templates of

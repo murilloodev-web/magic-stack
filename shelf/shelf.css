@@ -1,0 +1,196 @@
+/* Magic Stack — the shelf and the table.
+   Ported from the Claude Design file "Estante e Mesa v2". Desktop first;
+   below 600 px the layout switches to the phone version (same breakpoint
+   as shelf.js). */
+
+html, body { margin: 0; background: #0b0b14; color: #dfe7d9; }
+* { box-sizing: border-box; }
+a { color: #f3b04a; }
+a:hover { color: #dfe7d9; }
+[hidden] { display: none !important; }
+
+.ms-root { position: relative; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden;
+  background: #15162a; font-family: 'EB Garamond', Georgia, serif; color: #dfe7d9; }
+.ms-canvas { position: absolute; left: 0; top: 0; z-index: 0; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; }
+.only-mobile { display: none; }
+
+/* ---------- wall: bookcase + side column ---------- */
+.ms-wall { position: relative; z-index: 2; flex: 1 0 auto; display: flex; flex-direction: row; align-items: flex-end; gap: 5%; padding: 112px 5% 0; }
+.ms-case { position: relative; flex: 0 1 780px; min-width: 0; width: auto; }
+.ms-crown { position: relative; height: 32px; margin: 0 -12px; z-index: 3; }
+.ms-crown h1 { position: absolute; left: 50%; top: -24px; transform: translateX(-50%); margin: 0; padding: 6px 26px 8px;
+  background: #f3b04a; color: #2a1d17; font-family: 'Pirata One', serif; font-weight: 400; font-size: 32px; line-height: 1; white-space: nowrap;
+  box-shadow: inset 0 -4px 0 #e27a3f, 0 -4px 0 0 #7a5a3e, 0 4px 0 0 #7a5a3e, -4px 0 0 0 #7a5a3e, 4px 0 0 0 #7a5a3e; }
+.ms-rivet { position: absolute; top: 50%; width: 4px; height: 4px; margin-top: -2px; background: #7a5a3e; }
+.ms-rivet.l { left: 8px; } .ms-rivet.r { right: 8px; }
+
+.ms-nav { position: relative; outline: none; outline-offset: 6px; padding: 0 16px; }
+.ms-nav.is-drop { outline: 4px dashed #f3b04a; }
+.ms-row { list-style: none; margin: 0; padding: 0 20px; height: 198px; display: flex; align-items: flex-end; gap: 4px;
+  overflow-x: visible; scroll-snap-type: none; scrollbar-width: thin; scrollbar-color: #5a4232 #2a1d17; background: transparent; }
+.ms-row-gap { height: 16px; }
+
+/* spines */
+.ms-book { position: relative; flex: none; scroll-snap-align: start; transition: transform 120ms steps(3); z-index: 1; }
+.ms-book.is-lift { transform: translateY(-10px); }
+.ms-book.is-tip { z-index: 5; }
+.ms-book.is-gone { visibility: hidden; }
+.ms-spine { position: relative; display: block; width: 100%; height: 100%; background: var(--c); color: var(--ink);
+  box-shadow: inset 4px 0 0 var(--light), inset -4px 0 0 #0b0b14, 0 0 0 2px #0b0b14;
+  cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; text-decoration: none; }
+.ms-spine:hover { color: var(--ink); }
+.ms-spine:focus-visible { outline: 4px solid #f3b04a; outline-offset: 4px; }
+.ms-sp-line { position: absolute; left: 2px; right: 2px; height: 2px; background: rgba(223,231,217,.18); box-shadow: 0 2px 0 rgba(11,11,20,.5); }
+.ms-sp-line.top { top: 22px; } .ms-sp-line.bot { bottom: 22px; }
+.ms-sp-band { position: absolute; left: 4px; right: 4px; height: 4px; background: var(--band); }
+.ms-sp-band.top { top: 12px; } .ms-sp-band.bot { bottom: 12px; }
+.ms-sp-title { position: absolute; left: 0; right: 0; top: 28px; bottom: 34px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.ms-sp-title > span { writing-mode: vertical-rl; font-family: 'Silkscreen', monospace; font-size: 10px; line-height: 1.1; letter-spacing: .04em; text-transform: uppercase; text-align: center; max-height: 100%; }
+.ms-sp-emblem { position: absolute; left: 50%; bottom: 20px; width: 8px; height: 8px; margin-left: -4px; background: #b48cf0; transform: rotate(45deg); }
+.ms-ribbon { position: absolute; top: -14px; left: 30%; width: 6px; height: 30px; background: #b8433e; box-shadow: inset -2px 0 0 #7a2f45; pointer-events: none; }
+.ms-draft1 { position: absolute; top: -10px; left: 4px; right: 8px; height: 12px; background: #dfe7d9; box-shadow: inset 0 -2px 0 #9fa8a6; pointer-events: none; }
+.ms-draft2 { position: absolute; top: -6px; left: 10px; right: 2px; height: 10px; background: #9fa8a6; pointer-events: none; }
+.ms-tip { position: absolute; left: 50%; bottom: calc(100% + 18px); transform: translateX(-50%); width: 230px; background: #15162a; color: #dfe7d9; padding: 10px 12px;
+  box-shadow: 0 -4px 0 #8e8aae, 0 4px 0 #8e8aae, -4px 0 0 #8e8aae, 4px 0 0 #8e8aae; pointer-events: none; z-index: 10; display: flex; flex-direction: column; gap: 6px; }
+.ms-tip-title { font-family: 'Pirata One', serif; font-size: 21px; line-height: 1.05; }
+.ms-tip-meta { font-family: 'Silkscreen', monospace; font-size: 10px; letter-spacing: .04em; color: #8e8aae; text-transform: uppercase; }
+.ms-tip-arrow { position: absolute; left: 50%; bottom: -12px; width: 8px; height: 8px; margin-left: -4px; background: #8e8aae; }
+
+.ms-empty { flex: none; width: 44px; scroll-snap-align: start; }
+.ms-empty a { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; text-decoration: none; color: #8a86a8;
+  background: repeating-conic-gradient(#3a2a22 0 25%, transparent 0 50%) 0 0/8px 8px; box-shadow: inset 0 0 0 2px #3a2a22, inset 0 0 0 6px #2a1d17; }
+.ms-empty a:hover { color: #dfe7d9; }
+.ms-empty a:focus-visible { outline: 4px solid #f3b04a; outline-offset: 4px; }
+.ms-empty a span { writing-mode: vertical-rl; font-family: 'Silkscreen', monospace; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; background: #2a1d17; padding: 6px 2px; }
+
+/* side column: pinned note + window */
+.ms-side { flex: 1 1 0; min-width: 220px; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 24px; padding: 0 0 56px; }
+.ms-note { position: relative; max-width: 290px; padding: 20px 22px 16px; background-color: #dfe7d9;
+  background-image: repeating-linear-gradient(transparent 0 26px, rgba(159,168,166,.45) 26px 28px); color: #2a1d17;
+  box-shadow: inset 0 -4px 0 #9fa8a6, inset -4px 0 0 #9fa8a6, 0 0 0 2px #0b0b14, 8px 8px 0 rgba(11,11,20,.5);
+  display: flex; flex-direction: column; gap: 8px; transform: rotate(-1.5deg); }
+.ms-pin { position: absolute; left: 50%; top: 6px; width: 8px; height: 8px; margin-left: -4px; background: #3b3860; box-shadow: inset -2px -2px 0 #15162a; }
+.ms-note-main { margin: 0; font-style: italic; font-size: 20px; line-height: 1.3; text-wrap: pretty; }
+.ms-note-sub { margin: 0; font-family: 'Silkscreen', monospace; font-size: 10px; line-height: 1.4; letter-spacing: .04em; color: #7a2f45; }
+.ms-window { flex: none; width: 232px; height: 300px; }
+
+/* ---------- table ---------- */
+.ms-table { position: relative; flex: none; z-index: 2; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 120px; padding: 28px 32px 64px; min-height: 420px; }
+.ms-pool { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0; transition: opacity 500ms steps(5); }
+.ms-pool.is-lit { opacity: 1; }
+.ms-glowbox { position: absolute; border-radius: 50%; }
+.ms-glow { position: absolute; left: 0; top: 0; image-rendering: pixelated; }
+.ms-beam { position: absolute; mix-blend-mode: screen; }
+.ms-group { position: relative; display: flex; align-items: flex-end; gap: 128px; }
+.ms-lampspace { flex: none; width: 64px; height: 96px; margin-bottom: 8px; }
+.ms-zone { position: relative; flex: none; width: 150px; height: 200px; perspective: 900px; z-index: 2; }
+.ms-droplabel { position: absolute; inset: -12px; display: flex; align-items: flex-end; justify-content: center; }
+.ms-droplabel span { transform: translateY(32px); background: #15162a; color: #dfe7d9; padding: 6px 10px; font-family: 'Silkscreen', monospace; font-size: 11px; letter-spacing: .06em; white-space: nowrap; box-shadow: 0 0 0 2px #f3b04a; }
+
+/* the book on the table */
+.ms-cover { position: absolute; inset: 0; transform-style: preserve-3d; box-shadow: 8px 8px 0 #2a1d17; cursor: grab; touch-action: none; }
+.ms-cover.is-away { visibility: hidden; }
+.ms-cover-inside { position: absolute; inset: 0; background: #dfe7d9; color: #15162a; padding: 14px 12px 12px 16px; box-shadow: inset 6px 0 0 #9fa8a6, 0 0 0 2px #0b0b14; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+.ms-cover-inside .k { font-family: 'Silkscreen', monospace; font-size: 8px; color: #7a2f45; }
+.ms-cover-inside .s { font-family: 'Silkscreen', monospace; font-size: 7px; line-height: 1.3; text-transform: uppercase; }
+.ms-lid { position: absolute; inset: 0; transform-origin: 0 50%; transform-style: preserve-3d; }
+.ms-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.ms-face.back { transform: rotateY(180deg); background: #dfe7d9; color: #15162a; box-shadow: inset -6px 0 0 #9fa8a6, 0 0 0 2px #0b0b14; padding: 16px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ms-face.back .t { font-family: 'Pirata One', serif; font-size: 18px; line-height: 1; }
+.ms-face.back .m { font-family: 'Silkscreen', monospace; font-size: 7px; line-height: 1.3; color: #7a2f45; }
+.ms-generic { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 22px; text-align: center; gap: 12px; }
+.ms-generic .d { width: 14px; height: 14px; transform: rotate(45deg); }
+.ms-generic .t { font-family: 'Pirata One', serif; font-size: 22px; line-height: 1; }
+.ms-generic .m { font-family: 'Silkscreen', monospace; font-size: 8px; text-transform: uppercase; }
+
+/* card slot: idle hint or the book card */
+.ms-cardslot { position: relative; flex: none; width: 340px; min-height: 200px; z-index: 3; }
+.ms-hint { position: absolute; left: 0; bottom: 24px; width: 100%; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.ms-hint-mobile { display: none; margin: 0; font-style: italic; font-size: 20px; line-height: 1.35; color: #dfe7d9; text-wrap: pretty; }
+.ms-hint-text { margin: 0; font-size: 20px; line-height: 1.35; color: #dfe7d9; text-wrap: pretty; text-shadow: 2px 2px 0 #2a1d17; }
+.ms-hint-keys { font-family: 'Silkscreen', monospace; font-size: 11px; letter-spacing: .06em; color: #dfe7d9; text-shadow: 2px 2px 0 #2a1d17; }
+.ms-card { position: absolute; left: 0; bottom: -90px; width: 100%; background: #15162a; color: #dfe7d9; padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 8px;
+  box-shadow: inset 0 0 0 2px #3b3860, 0 -4px 0 0 #8e8aae, 0 4px 0 0 #8e8aae, -4px 0 0 0 #8e8aae, 4px 0 0 0 #8e8aae, 14px 18px 0 0 rgba(11,11,20,.55); }
+.ms-card-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-family: 'Silkscreen', monospace; font-size: 11px; letter-spacing: .04em; color: #8e8aae; text-transform: uppercase; }
+.ms-status { color: #0b0b14; padding: 2px 6px; }
+.ms-card h2 { margin: 0; font-family: 'Pirata One', serif; font-weight: 400; font-size: 30px; line-height: 1; }
+.ms-card p { margin: 0; font-size: 16px; line-height: 1.35; text-wrap: pretty; }
+.ms-card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline; font-size: 15px; line-height: 1.3; }
+.ms-card dt { font-family: 'Silkscreen', monospace; font-size: 10px; color: #8e8aae; }
+.ms-card dd { margin: 0; }
+.ms-card-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding-top: 4px; }
+.ms-btn { border: 0; cursor: pointer; background: #f3b04a; color: #0b0b14; font-family: 'Silkscreen', monospace; font-size: 14px; padding: 12px 18px 14px; box-shadow: inset -4px -4px 0 #e27a3f; text-decoration: none; display: inline-block; }
+.ms-btn:hover { color: #0b0b14; }
+.ms-btn:active { box-shadow: inset 4px 4px 0 #e27a3f; }
+.ms-btn:focus-visible { outline: 4px solid #dfe7d9; outline-offset: 4px; }
+.ms-btn.dark { background: #1f1f3d; color: #dfe7d9; box-shadow: inset -4px -4px 0 #0b0b14, inset 0 0 0 2px #3b3860; }
+.ms-btn.dark:hover { background: #3b3860; color: #dfe7d9; }
+.ms-btn.dark:focus-visible { outline-color: #f3b04a; }
+.ms-btn.sm { font-size: 13px; }
+.ms-linkbtn { border: 0; cursor: pointer; background: transparent; color: #8e8aae; font-family: 'Silkscreen', monospace; font-size: 11px; padding: 10px 4px; text-decoration: underline; text-underline-offset: 4px; }
+.ms-linkbtn:hover { color: #dfe7d9; }
+.ms-linkbtn:focus-visible { outline: 4px solid #f3b04a; outline-offset: 2px; }
+.ms-card-keys { font-family: 'Silkscreen', monospace; font-size: 10px; letter-spacing: .06em; color: #8e8aae; }
+
+/* props you can move around */
+.ms-props { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 6; }
+.ms-prop { position: absolute; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ms-prop span, .ms-prop div { position: absolute; }
+.ms-prop-shadow { left: 8%; right: 8%; bottom: -3px; height: 6px; background: rgba(11,11,20,.45); }
+
+/* lamp-over-a-spine summary */
+.ms-mini { position: absolute; width: 250px; z-index: 7; background: #15162a; color: #dfe7d9; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+  box-shadow: inset 0 0 0 2px #3b3860, 0 -4px 0 0 #f3b04a, 0 4px 0 0 #f3b04a, -4px 0 0 0 #f3b04a, 4px 0 0 0 #f3b04a, 10px 12px 0 0 rgba(11,11,20,.55); }
+.ms-mini .meta { display: flex; gap: 6px; align-items: center; font-family: 'Silkscreen', monospace; font-size: 10px; color: #8e8aae; text-transform: uppercase; }
+.ms-mini .meta span:first-child { color: #0b0b14; padding: 1px 5px; }
+.ms-mini .t { font-family: 'Pirata One', serif; font-size: 22px; line-height: 1; }
+.ms-mini .s { font-size: 15px; line-height: 1.35; text-wrap: pretty; }
+
+/* the book being dragged */
+.ms-drag { position: fixed; transform: rotate(6deg); pointer-events: none; z-index: 60;
+  box-shadow: inset 4px 0 0 var(--light), inset -4px 0 0 #0b0b14, 0 0 0 2px #0b0b14, 14px 18px 0 rgba(11,11,20,.55);
+  background: var(--c); color: var(--ink); }
+.ms-drag .ms-generic { box-shadow: inset 0 0 0 4px var(--band), inset 0 0 0 6px #0b0b14; padding: 20px; gap: 10px; }
+
+/* the open book */
+.ms-overlay { position: fixed; inset: 0; z-index: 100; background: #0b0b14; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 32px 16px; overflow: auto; }
+.ms-spread { flex: none; width: min(1080px, 92vw, 128vh); display: grid; grid-template-columns: 1fr 1fr; transform-origin: 50% 50%; }
+.ms-page { background: #dfe7d9; color: #15162a; padding: clamp(20px, 5%, 56px); display: flex; flex-direction: column; }
+.ms-page.l { box-shadow: inset -12px 0 0 #9fa8a6; gap: 16px; min-height: 480px; }
+.ms-page.r { box-shadow: inset 12px 0 0 #9fa8a6; gap: 12px; }
+.ms-page .kick { font-family: 'Silkscreen', monospace; font-size: 11px; letter-spacing: .04em; color: #7a2f45; text-transform: uppercase; }
+.ms-page h2 { margin: 0; font-family: 'Pirata One', serif; font-weight: 400; font-size: clamp(38px, 5vw, 60px); line-height: .95; }
+.ms-page .syn { margin: 0; font-style: italic; font-size: 19px; line-height: 1.45; text-wrap: pretty; }
+.ms-page .by { font-size: 16px; }
+.ms-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; font-family: 'Silkscreen', monospace; font-size: 10px; }
+.ms-tags span { padding: 3px 7px; }
+.ms-page .ck { font-family: 'Silkscreen', monospace; font-size: 11px; letter-spacing: .06em; color: #7a2f45; }
+.ms-toc { display: flex; flex-direction: column; gap: 2px; }
+.ms-toc .s { font-family: 'Silkscreen', monospace; font-size: 11px; text-transform: uppercase; }
+.ms-toc .p { font-size: 15px; line-height: 1.35; color: #3b3860; text-wrap: pretty; }
+.ms-overlay-actions { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: center; }
+
+.ms-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ms-foot { background: #0b0b14; color: #8e8aae; font-family: 'Silkscreen', monospace; font-size: 10px; letter-spacing: .04em; text-align: center; padding: 14px 16px 18px; text-transform: uppercase; }
+.ms-foot a { color: #8e8aae; }
+.ms-foot a:hover { color: #f3b04a; }
+
+/* ---------- phone (< 600 px) ---------- */
+@media (max-width: 599px) {
+  .only-desktop { display: none; }
+  .only-mobile { display: inline; }
+  .ms-wall { flex-direction: column; align-items: stretch; padding: 112px 16px 0; }
+  .ms-case { width: 100%; }
+  .ms-row { height: 196px; overflow-x: auto; scroll-snap-type: x mandatory; }
+  .ms-spine { touch-action: pan-x; }
+  .ms-side { display: none; }
+  .ms-table { gap: 28px; padding: 36px 16px 72px; min-height: 300px; }
+  .ms-group { gap: 52px; }
+  .ms-cardslot { width: 100%; min-height: 0; }
+  .ms-hint { position: relative; bottom: 24px; text-align: center; }
+  .ms-hint-mobile { display: block; }
+  .ms-card { position: relative; bottom: 0; }
+  .ms-card-keys { display: none; }
+  .ms-spread { grid-template-columns: 1fr; }
+  .ms-page.l { min-height: 0; }
+}

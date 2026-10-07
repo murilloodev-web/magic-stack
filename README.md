@@ -18,18 +18,23 @@ Each book is a playable story, written as plain Lua data and built into a static
 library.lua                 the shelf: which books, in which order
 site.lua                    site settings (Worker address, Turnstile key, terms version)
 books/<id>/
-  book.lua                  title, system, colours, and which form each page offers
+  book.lua                  title, system, spine and cover, and which form each page offers
+  cover.html                optional hand-made cover for the table
   build.lua                 the book's own validator and site generator
   data/                     the story, as Lua data
   REFERENCE.md              the whole book as one Markdown file (generated)
+shelf/
+  shelf.html, shelf.css      the shelf-and-table home page (from the Claude Design "Estante e Mesa")
+  shelf.paint.js            the room's pixel art, painted on a canvas
+  shelf.app.js              drag a book to the table, open it, move the props
 contribute/
   templates.lua             the contribution forms (fields, EN/PT text, Lua draft shape)
   strings.lua               form interface text, EN/PT
-  form.js, stack.css        the form page and the shelf's provisional look
+  form.js, stack.css        the form page and the terms page
   TERMOS.pt.md, TERMS.en.md contribution and consent terms
 worker/                     Cloudflare Worker: form → private GitHub issue
 build.lua                   builds every book, the shelf, the form, the terms and forms.json
-DESIGN-BRIEF.md             the shelf-and-table redesign, for Claude Design
+DESIGN-BRIEF.md             the design brief used in Claude Design
 ```
 
 `lua build.lua` refuses to build if a book is inconsistent (broken links, uncited sources, character sheets that break the rules, scenes with no way out) or if a form template is broken (missing translations, drafts pointing to fields that do not exist, pages offering forms that do not exist).
