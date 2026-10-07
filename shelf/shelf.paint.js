@@ -1,6 +1,7 @@
 // Magic Stack — painting the room (canvas pixel art), the magic circle and
 // the window fog. Taken from the Claude Design file "Estante e Mesa v2";
-// the only change is a smaller magic circle on phones; shelf.app.js drives it. build.lua joins both files
+// changes: a smaller magic circle on phones, and object sizes that match
+// the pixel-art sprites in shelf.props.js; shelf.app.js drives it. build.lua joins both files
 // into docs/shelf.js inside one function scope.
 
 const STATUS = { completo: 'Completo', andamento: 'Em andamento', rascunho: 'Rascunho' };
@@ -11,9 +12,9 @@ const PROPS = [
   { id: 'dice', k: 'Dice', w: 44, h: 28, def: { surf: 'shelf', row: 0, fx: 0.72 } },
   { id: 'potion', k: 'Potion', w: 24, h: 44, def: { surf: 'shelf', row: 0, fx: 0.84 } },
   { id: 'stack', k: 'Stack', w: 64, h: 40, def: { surf: 'shelf', row: 1, fx: 0.5 } },
-  { id: 'scroll', k: 'Scroll', w: 68, h: 18, def: { surf: 'shelf', row: 1, fx: 0.66 } },
-  { id: 'candle', k: 'Candle', w: 24, h: 52, def: { surf: 'shelf', row: 1, fx: 0.78 } },
-  { id: 'orb', k: 'Orb', w: 36, h: 42, def: { surf: 'shelf', row: 1, fx: 0.88 } },
+  { id: 'scroll', k: 'Scroll', w: 68, h: 20, def: { surf: 'shelf', row: 1, fx: 0.66 } },
+  { id: 'candle', k: 'Candle', w: 24, h: 64, def: { surf: 'shelf', row: 1, fx: 0.78 } },
+  { id: 'orb', k: 'Orb', w: 36, h: 44, def: { surf: 'shelf', row: 1, fx: 0.88 } },
   { id: 'lamp', k: 'Lamp', w: 64, h: 96, def: { surf: 'table', fx: null } }
 ];
 const SYS_COLOR = { 'Call of Cthulhu 7e': '#5fd3b0', 'Tormenta20': '#ff5a4e', 'D&D 5e': '#f3b04a', 'Old Dragon 2e': '#9dbb6a', 'Ordem Paranormal': '#ff6fae', 'Savage Worlds': '#e27a3f', 'GURPS': '#6fb4ff' };

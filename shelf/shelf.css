@@ -149,6 +149,9 @@ a:hover { color: #dfe7d9; }
 .ms-props { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 6; }
 .ms-prop { position: absolute; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .ms-prop span, .ms-prop div { position: absolute; }
+.ms-prop canvas.ms-sprite { position: absolute; left: 0; top: 0; image-rendering: pixelated; image-rendering: crisp-edges; }
+.ms-blaze { position: absolute; z-index: 1; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges;
+  filter: drop-shadow(0 0 10px rgba(226, 122, 63, .55)); }
 .ms-prop-shadow { left: 8%; right: 8%; bottom: -3px; height: 6px; background: rgba(11,11,20,.45); }
 
 /* lamp-over-a-spine summary */

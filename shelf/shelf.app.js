@@ -4,15 +4,7 @@
 // ---------------------------------------------------------------------------
 const DATA = JSON.parse(document.getElementById('shelf-data').textContent);
 const BOOKS = DATA.books;
-const PROP_ART = {
-  Dice: '<span style="left:0; bottom:0; width:24px; height:24px; background:#b8433e; box-shadow:inset -4px -4px 0 #7a2f45, 0 0 0 2px #0b0b14;"></span><span style="left:5px; bottom:15px; width:4px; height:4px; background:#dfe7d9;"></span><span style="left:13px; bottom:7px; width:4px; height:4px; background:#dfe7d9;"></span><span style="left:28px; bottom:0; width:16px; height:16px; background:#dfe7d9; box-shadow:inset -4px -4px 0 #9fa8a6, 0 0 0 2px #0b0b14;"></span><span style="left:33px; bottom:6px; width:4px; height:4px; background:#15162a;"></span>',
-  Potion: '<span style="left:8px; bottom:36px; width:8px; height:6px; background:#7a5a3e; box-shadow:0 0 0 2px #0b0b14;"></span><span style="left:8px; bottom:26px; width:8px; height:10px; background:#8e8aae; box-shadow:0 0 0 2px #0b0b14;"></span><span style="left:2px; bottom:0; width:20px; height:26px; background:#9dbb6a; box-shadow:inset 0 10px 0 #3b3860, inset -4px 0 0 #3e4a2c, 0 0 0 2px #0b0b14;"></span><span style="left:6px; bottom:6px; width:4px; height:8px; background:#dfe7d9;"></span>',
-  Stack: '<span style="left:0; bottom:0; width:64px; height:12px; background:#7a2f45; box-shadow:inset 0 -4px 0 #4a2a55, inset 8px 0 0 #dfe7d9, 0 0 0 2px #0b0b14;"></span><span style="left:6px; bottom:14px; width:54px; height:12px; background:#3e4a2c; box-shadow:inset 0 -4px 0 #262543, inset -8px 0 0 #9fa8a6, 0 0 0 2px #0b0b14;"></span><span style="left:2px; bottom:28px; width:58px; height:10px; background:#1f1f3d; box-shadow:inset 0 -2px 0 #0b0b14, inset 6px 0 0 #f3b04a, 0 0 0 2px #0b0b14;"></span>',
-  Orb: '<span style="left:4px; bottom:0; width:28px; height:8px; background:#7a5a3e; box-shadow:inset 0 -4px 0 #3a2a22, 0 0 0 2px #0b0b14;"></span><span style="left:2px; bottom:8px; width:32px; height:32px; border-radius:50%; background:#262543; box-shadow:inset -6px -6px 0 #15162a, inset 4px 4px 0 #3b3860, 0 0 0 2px #0b0b14;"></span><span style="left:10px; bottom:26px; width:6px; height:6px; background:#8e8aae;"></span><span style="left:18px; bottom:16px; width:4px; height:4px; background:#3b3860;"></span>',
-  Scroll: '<span style="left:6px; right:6px; bottom:2px; height:12px; background:#9fa8a6; box-shadow:inset 0 -4px 0 #8e8aae, 0 0 0 2px #0b0b14;"></span><span style="left:0; bottom:0; width:8px; height:16px; background:#7a5a3e; box-shadow:0 0 0 2px #0b0b14;"></span><span style="right:0; bottom:0; width:8px; height:16px; background:#7a5a3e; box-shadow:0 0 0 2px #0b0b14;"></span><span style="left:32px; bottom:2px; width:4px; height:12px; background:#7a2f45;"></span>',
-  Candle: '<span style="left:6px; bottom:6px; width:12px; height:36px; background:#dfe7d9; box-shadow:inset -4px 0 0 #9fa8a6, 0 0 0 2px #0b0b14;"></span><span style="left:11px; bottom:42px; width:2px; height:6px; background:#0b0b14;"></span><span style="left:0; bottom:0; width:24px; height:6px; background:#3b3860; box-shadow:inset 0 2px 0 #8e8aae, 0 0 0 2px #0b0b14;"></span>',
-  Lamp: '<span style="left:24px; top:0; width:16px; height:4px; background:#8e8aae;"></span><span style="left:20px; top:4px; width:4px; height:8px; background:#8e8aae;"></span><span style="left:40px; top:4px; width:4px; height:8px; background:#8e8aae;"></span><span style="left:16px; top:8px; width:32px; height:4px; background:#3b3860;"></span><span style="left:8px; top:12px; width:48px; height:8px; background:#3b3860; box-shadow:inset 0 4px 0 #8e8aae;"></span><span style="left:12px; top:20px; width:40px; height:56px; background:#e27a3f; box-shadow:inset 4px 0 0 #f3b04a, inset -4px 0 0 #b8433e;"></span><div class="ms-flame" style="left:24px; top:36px; width:16px; height:28px; transform-origin:50% 100%;"><span style="left:2px; top:4px; width:12px; height:24px; background:#f3b04a;"></span><span style="left:6px; top:0; width:4px; height:8px; background:#f3b04a;"></span><span style="left:5px; top:12px; width:6px; height:14px; background:#dfe7d9;"></span></div><span style="left:8px; top:20px; width:4px; height:56px; background:#3b3860;"></span><span style="left:52px; top:20px; width:4px; height:56px; background:#3b3860;"></span><span style="left:8px; top:76px; width:48px; height:8px; background:#3b3860; box-shadow:inset 0 4px 0 #8e8aae;"></span><span style="left:4px; top:84px; width:56px; height:8px; background:#262543; box-shadow:0 4px 0 #2a1d17;"></span>'
-};
+// object art: see shelf.props.js (pixel-art sprites)
 
 const $ = (id) => document.getElementById(id);
 const E = {
@@ -321,7 +313,7 @@ function renderProps() {
       el.className = 'ms-prop';
       el.dataset.prop = d.id;
       el.style.width = d.w + 'px'; el.style.height = d.h + 'px';
-      el.innerHTML = '<span class="ms-prop-shadow"></span>' + PROP_ART[d.k];
+      el.append(propArt(d.k));
       el.addEventListener('pointerdown', (e) => propDown(e, d.id));
       E.props.append(el);
       propEls[d.id] = el;
@@ -335,7 +327,36 @@ function renderProps() {
     el.style.transform = dr ? 'rotate(-4deg) translateY(-6px)' : 'none';
     el.style.zIndex = dr ? 70 : 1;
   });
+  shadeProps();
   ambient();
+  if (!S.pdrag) checkBlaze();
+}
+
+// Objects get darker away from the lamp, as the painted room does.
+function shadeProps() {
+  const lamp = propEls.lamp;
+  if (!lamp || lamp.hidden) return;
+  const lx = lamp.offsetLeft + lamp.offsetWidth / 2, ly = lamp.offsetTop + lamp.offsetHeight * 0.42;
+  for (const id in propEls) {
+    const el = propEls[id];
+    if (id === 'lamp' || el.hidden) { el.style.filter = ''; continue; }
+    const dx = el.offsetLeft + el.offsetWidth / 2 - lx, dy = el.offsetTop + el.offsetHeight / 2 - ly;
+    const k = Math.max(0, 1 - Math.hypot(dx, dy * 1.1) / 900);
+    el.style.filter = `brightness(${(0.55 + 0.5 * k).toFixed(2)}) saturate(${(0.75 + 0.25 * k).toFixed(2)})`;
+  }
+}
+
+// Easter egg: the lamp inside the circle lights a tall blaze (shelf.blaze.js).
+const blaze = makeBlaze(E.table);
+let blazeBox = null;
+function checkBlaze() {
+  const lamp = propEls.lamp;
+  if (!lamp || lamp.hidden || !blazeBox || !S.lay || !S.lay.table) { blaze.set(false, isReduced()); return; }
+  const t = S.lay.table;
+  const bx = lamp.offsetLeft + lamp.offsetWidth / 2 - t.x, by = lamp.offsetTop + lamp.offsetHeight - 8 - t.y;
+  const inside = ((bx - blazeBox.cx) / blazeBox.rx) ** 2 + ((by - blazeBox.cy) / blazeBox.ry) ** 2 <= 1.15;
+  if (inside && !blaze.on) announce(lang() === 'pt' ? 'O círculo pega fogo.' : 'The circle bursts into flame.');
+  blaze.set(inside, isReduced());
 }
 
 function renderBeams() {
@@ -344,6 +365,9 @@ function renderBeams() {
   if (!lay || !lay.zone || !lay.table) return;
   const mob = isMobile();
   const zx = lay.zone.x - lay.table.x + lay.zone.w / 2, zy = lay.zone.y - lay.table.y + lay.zone.h * 0.62, rx = mob ? 116 : 184, ry = mob ? 52 : 88;
+  blazeBox = { cx: zx, cy: zy, rx, ry, height: mob ? 380 : 560 };
+  blaze.layout(blazeBox);
+  if (!S.pdrag) setTimeout(checkBlaze, 0);
   Object.assign(E.glowbox.style, { left: (zx - rx * 1.25) + 'px', top: (zy - ry * 1.25) + 'px', width: (rx * 2.5) + 'px', height: (ry * 2.5) + 'px' });
   for (let i = 0; i < 22; i++) {
     const t = i / 22 * Math.PI * 2 + 0.13, rr2 = 0.9 + ((i * 37) % 10) / 100;
@@ -358,7 +382,16 @@ function renderBeams() {
   updateCircle();
 }
 
+let candleAnim = null;
 function ambient() {
+  const cflame = E.props.querySelector('.ms-cflame');
+  if (cflame && !(candleAnim && candleAnim.effect && candleAnim.effect.target === cflame) && !isReduced()) {
+    if (candleAnim) candleAnim.cancel();
+    candleAnim = cflame.animate([
+      { transform: 'scale(1,1)', easing: 'steps(1, end)' }, { transform: 'scale(.8,1.15)', easing: 'steps(1, end)' },
+      { transform: 'scale(1,.85)', easing: 'steps(1, end)' }, { transform: 'scale(1,1)' },
+    ], { duration: 700, iterations: Infinity });
+  }
   const flame = E.props.querySelector('.ms-flame');
   if (flame && flameAnim && flameAnim.effect && flameAnim.effect.target === flame && !isReduced()) return;
   if (flameAnim) { flameAnim.cancel(); flameAnim = null; }
@@ -547,7 +580,11 @@ function propDown(e, id) {
 }
 function propMove(e) {
   const p = ppend;
-  if (!p.active) { if (Math.hypot(e.clientX - p.sx, e.clientY - p.sy) < 4) return; p.active = true; }
+  if (!p.active) {
+    if (Math.hypot(e.clientX - p.sx, e.clientY - p.sy) < 4) return;
+    p.active = true;
+    if (p.id === 'lamp') blaze.set(false, isReduced());
+  }
   const rr = E.root.getBoundingClientRect();
   let lampBook = null;
   if (p.id === 'lamp') {
