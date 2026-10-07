@@ -19,6 +19,23 @@ const BLAZE_SOFT = ['#b8433e', '#e27a3f', '#f3b04a', '#fbe598'].map(hx);
 const TOON = { line: hx('#7a2f45'), outer: hx('#e0566d'), mid: hx('#f0874a'), inner: hx('#f3b04a'), core: hx('#fbe598') };
 const BLAZE_MAX = 60;
 
+// a fire in the colour of the circle: dark ember, body, the colour itself, a pale core
+function mixc(a, b, t) { return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
+function blazePalette(hex) {
+  if (!hex) return { soft: BLAZE_SOFT, real: BLAZE_REAL, toon: TOON };
+  const c = hx(hex), K = [11, 11, 20], W = [255, 255, 255];
+  const stops = [mixc(c, K, 0.8), mixc(c, K, 0.5), mixc(c, K, 0.2), c, mixc(c, W, 0.45), mixc(c, W, 0.8), W];
+  const real = BLAZE_REAL.map((_, i) => {
+    const f = (i / (BLAZE_REAL.length - 1)) * (stops.length - 1), j = Math.min(stops.length - 2, Math.floor(f));
+    return mixc(stops[j], stops[j + 1], f - j);
+  });
+  return {
+    soft: [mixc(c, K, 0.35), mixc(c, K, 0.1), mixc(c, W, 0.3), mixc(c, W, 0.7)],
+    real,
+    toon: { line: mixc(c, K, 0.6), outer: mixc(c, K, 0.15), mid: c, inner: mixc(c, W, 0.4), core: mixc(c, W, 0.75) },
+  };
+}
+
 function blazeStyle() {
   const q = new URLSearchParams(location.search).get('fire');
   return BLAZE_STYLES.indexOf(q) >= 0 ? q : BLAZE_STYLE;
@@ -37,7 +54,7 @@ function makeBlaze(backHost, frontHost, opts) {
     host.append(cv);
     return { cv, ctx: null, img: null, heat: null, ring: [], front: i === 1 };
   });
-  let gw = 0, gh = 0, box = null, fuel = false, timer = null, tick = 0, sparks = [], emitters = [], grow = 0;
+  let pal = blazePalette(null), gw = 0, gh = 0, box = null, fuel = false, timer = null, tick = 0, sparks = [], emitters = [], grow = 0;
   const U = PX * cell;   // CSS px per grid cell
 
   // b: circle centre and radii in CSS px (in the back layer's coordinates);
@@ -60,10 +77,10 @@ function makeBlaze(backHost, frontHost, opts) {
       // the near flames have a ceiling per column, a little above the near rim,
       // so the book and the lamp standing in the circle stay readable
       L.ceil = new Int16Array(gw); L.soft = new Int16Array(gw);
-      const H = Math.max(2, ry * 0.32);
+      const H = Math.max(3, ry * 1.5);   // a little above the lamp's head
       for (let x = 0; x < gw; x++) {
         const u = (x + 0.5 - cx) / rx, rim = Math.abs(u) < 1 ? cy + ry * Math.sqrt(1 - u * u) : cy;
-        L.ceil[x] = Math.round(rim - H); L.soft[x] = Math.round(rim - H * 0.5);
+        L.ceil[x] = Math.round(rim - H); L.soft[x] = Math.round(rim - H * 0.55);
       }
       // fuel: the back layer burns the far half of the ellipse, the front layer the near half
       L.ring = [];
@@ -93,7 +110,7 @@ function makeBlaze(backHost, frontHost, opts) {
     const heat = L.heat;
     const top = Math.round(BLAZE_MAX * Math.max(0.45, scale));
     // near flames start cooler, so they stay low in front of what stands in the circle
-    const peak = L.front ? Math.round(top * 0.6) : top, dense = scale < 1 ? 0.85 : L.front ? 0.4 : 0.55;
+    const peak = top, dense = scale < 1 ? 0.85 : L.front ? 0.5 : 0.55;
     if (fuel) for (const i of L.ring) heat[i] = Math.random() < dense ? peak - ((Math.random() * 6) | 0) : (Math.random() * 20 * scale) | 0;
     let alive = false;
     for (let y = 1; y < gh; y++) for (let x = 0; x < gw; x++) {
@@ -108,7 +125,7 @@ function makeBlaze(backHost, frontHost, opts) {
       if (L.front) {
         const cx2 = dst % gw, cy2 = (dst / gw) | 0;
         if (cy2 < L.ceil[cx2]) k = 255;                    // above the ceiling: gone
-        else if (cy2 < L.soft[cx2]) k += 3 * cell;         // near it: dying fast, so the tips stay ragged
+        else if (cy2 < L.soft[cx2]) k += 2 * cell;         // near it: dying fast, so the tips stay ragged
       }
       if (dst >= 0 && dst < heat.length) heat[dst] = Math.max(0, h - k);
     }
@@ -116,7 +133,7 @@ function makeBlaze(backHost, frontHost, opts) {
   }
   function simDraw(L) {
     const d = L.img.data, heat = L.heat, soft = style === 'soft';
-    const ramp = soft ? BLAZE_SOFT : BLAZE_REAL;
+    const ramp = soft ? pal.soft : pal.real;
     for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
       const i = y * gw + x, h = heat[i], o = i * 4;
       const b = soft ? 0.5 : BAY[(y & 3) * 4 + (x & 3)];
@@ -132,6 +149,7 @@ function makeBlaze(backHost, frontHost, opts) {
   // a tongue: a rounded teardrop that sways and bobs, outlined, with flat bands
   // of colour from the rim to a bright core near its base
   function drawTongue(d, e, g) {
+    const T = pal.toon;
     const f = (tick + e.phase) % 8;
     const bob = [0, 1, 2, 1, 0, -1, -2, -1][f] * 0.05;
     const H = Math.max(2, (16 + (e.seed % 6)) * e.hs * (1 + bob) * g), W = (4.5 + (e.seed % 3) * 0.7) * e.ws * g;
@@ -148,9 +166,9 @@ function makeBlaze(backHost, frontHost, opts) {
         let c = null;
         if (dx <= half) {
           const v = (dx / Math.max(0.5, half)) * 0.65 + t * 0.55;
-          c = v < 0.42 ? TOON.core : v < 0.62 ? TOON.inner : v < 0.85 ? TOON.mid : TOON.outer;
-        } else if (dx <= half + 1) c = TOON.line;
-        if (c && (c !== TOON.line || d[o + 3] === 0)) { d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255; }
+          c = v < 0.42 ? T.core : v < 0.62 ? T.inner : v < 0.85 ? T.mid : T.outer;
+        } else if (dx <= half + 1) c = T.line;
+        if (c && (c !== T.line || d[o + 3] === 0)) { d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255; }
       }
     }
   }
@@ -167,7 +185,7 @@ function makeBlaze(backHost, frontHost, opts) {
         s.y -= s.v; s.x += Math.sin((tick + s.life) * 0.3) * 0.3;
         const d = layers[s.front ? 1 : 0].img.data, x = Math.round(s.x), y = Math.round(s.y);
         if (x < 1 || x >= gw - 1 || y < 2 || y >= gh - 1) continue;
-        const c = s.life % 6 < 3 ? TOON.core : TOON.inner;
+        const c = s.life % 6 < 3 ? pal.toon.core : pal.toon.inner;
         const pts = s.life < 12 ? [[0, 0]] : [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];   // a twinkle that shrinks
         for (const [dx, dy] of pts) {
           const o = ((y + dy) * gw + x + dx) * 4;
@@ -210,6 +228,14 @@ function makeBlaze(backHost, frontHost, opts) {
         if (!timer) timer = setInterval(frame, sim ? 60 : 90);
       } else if (reduced) end();
       else if (!timer) timer = setInterval(frame, sim ? 60 : 90);
+    },
+    // the circle's colour, or null for plain fire
+    tint(hex) {
+      const key = hex || '';
+      if (key === (pal.key || '')) return;
+      pal = blazePalette(hex); pal.key = key;
+      if (timer === null && fuel && sim) layers.forEach(simDraw);   // a still frame (reduced motion)
+      else if (timer === null && fuel) toonDraw(1);
     },
     get on() { return fuel; },
     style,

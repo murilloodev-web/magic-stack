@@ -207,6 +207,8 @@ function updateCircle() {
   const random = DATA.circle === 'random';
   cc = lit ? (random ? (S.magicColor || MAGIC[0]) : (pb.magic || SYS_COLOR[pb.system] || '#f3b04a')) : '#dfe7d9';
   E.pool.classList.toggle('is-lit', lit);
+  // with a book awake in the circle, the lamp's fire (and the candle's) takes its colour
+  blaze.tint(lit ? cc : null); candleBlaze.tint(lit ? cc : null);
   E.glowbox.style.background = `radial-gradient(closest-side, ${lit ? cc + '44' : 'transparent'} 0 40%, ${lit ? cc + '1a' : 'transparent'} 40% 70%, transparent 70%)`;
   E.glow.style.filter = `drop-shadow(0 0 4px ${cc}) drop-shadow(0 0 14px ${cc})`;
   E.beams.querySelectorAll('.ms-beam').forEach((bm) => {
@@ -320,7 +322,9 @@ function renderProps() {
     const dr = S.pdrag && S.pdrag.id === d.id;
     const box = dr ? S.pdrag : propBox(d);
     const onShelf = !dr && (S.propPos[d.id] || d.def).surf === 'shelf';
-    const host = onShelf ? propsShelf : E.props;
+    // an object standing in the circle goes into the table, between the far
+    // flames and the book, so the book is always in front of it
+    const host = onShelf ? propsShelf : !dr && box && boxInCircle(box, d) ? propsIn : E.props;
     if (el.parentNode !== host) host.append(el);
     if (!box) { el.hidden = true; return; }
     el.hidden = false;
@@ -361,12 +365,21 @@ E.table.before(propsShelf);
 const blaze = makeBlaze(E.table, E.props);
 const candleBlaze = makeBlaze(E.table, E.props, { scale: 0.22 });
 let blazeBox = null;
-function inCircle(el) {
-  if (!el || el.hidden || !blazeBox || !S.lay || !S.lay.table) return false;
+function boxInCircle(box, d) {
+  if (!blazeBox || !S.lay || !S.lay.table) return false;
   const t = S.lay.table;
-  const bx = el.offsetLeft + el.offsetWidth / 2 - t.x, by = el.offsetTop + el.offsetHeight - 8 - t.y;
+  const bx = box.x + d.w / 2 - t.x, by = box.y + d.h - 8 - t.y;
   return ((bx - blazeBox.cx) / blazeBox.rx) ** 2 + ((by - blazeBox.cy) / blazeBox.ry) ** 2 <= 1.15;
 }
+function inCircle(el) {
+  if (!el || el.hidden) return false;
+  return boxInCircle({ x: el.offsetLeft, y: el.offsetTop }, { w: el.offsetWidth, h: el.offsetHeight });
+}
+// objects standing in the circle: inside the table, above the far flames, below the book
+const propsIn = document.createElement('div');
+propsIn.className = 'ms-props ms-props-in';
+propsIn.setAttribute('aria-hidden', 'true');
+E.table.append(propsIn);
 function checkBlaze() {
   const lamp = inCircle(propEls.lamp), candle = !lamp && inCircle(propEls.candle);
   if (lamp && !blaze.on) announce(lang() === 'pt' ? 'O círculo pega fogo.' : 'The circle bursts into flame.');
@@ -383,9 +396,10 @@ function renderBeams() {
   const zx = lay.zone.x - lay.table.x + lay.zone.w / 2, zy = lay.zone.y - lay.table.y + lay.zone.h * 0.62, rx = mob ? 116 : 184, ry = mob ? 52 : 88;
   blazeBox = { cx: zx, cy: zy, rx, ry, height: mob ? 380 : 560 };
   const origin = { front: { x: lay.table.x, y: lay.table.y } };
+  Object.assign(propsIn.style, { left: -lay.table.x + 'px', top: -lay.table.y + 'px' });
   blaze.layout(blazeBox, origin);
   candleBlaze.layout(blazeBox, origin);
-  if (!S.pdrag) setTimeout(checkBlaze, 0);
+  if (!S.pdrag) setTimeout(renderProps, 0);   // re-seat objects against the new circle
   Object.assign(E.glowbox.style, { left: (zx - rx * 1.25) + 'px', top: (zy - ry * 1.25) + 'px', width: (rx * 2.5) + 'px', height: (ry * 2.5) + 'px' });
   for (let i = 0; i < 22; i++) {
     const t = i / 22 * Math.PI * 2 + 0.13, rr2 = 0.9 + ((i * 37) % 10) / 100;

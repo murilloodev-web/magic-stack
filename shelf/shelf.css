@@ -230,3 +230,7 @@ a:hover { color: #dfe7d9; }
   .ms-hint-mobile { display: none; }
   .ms-wall { padding-top: 88px; }
 }
+/* objects standing in the circle: in the table, above the far flames, below the book */
+.ms-props-in { z-index: 1; }
+.ms-zone { pointer-events: none; }
+.ms-zone > * { pointer-events: auto; }
