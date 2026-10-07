@@ -30,8 +30,10 @@ local function sh_quote(s) return "'" .. s:gsub("'", "'\\''") .. "'" end
 ---------------------------------------------------------------------------
 -- 1. Books
 ---------------------------------------------------------------------------
+if not CHECK_ONLY then os.execute("rm -rf " .. OUT) end   -- start clean, so removed pages do not linger
 os.execute("mkdir -p " .. BUILD .. (CHECK_ONLY and "" or (" " .. OUT)))
 
+local LANGS = site.langs
 local books, manifests = {}, {}
 for _, id in ipairs(library) do
   local dir = "books/" .. id
@@ -40,14 +42,19 @@ for _, id in ipairs(library) do
     local book = dofile(dir .. "/book.lua")
     if book.id ~= id then fail("%s/book.lua: id is '%s', expected '%s'", dir, tostring(book.id), id) end
     books[#books + 1] = book
-    print("── " .. book.title)
-    local cmd = string.format("cd %s && %s build.lua %s--out %s --manifest %s --lib %s --shelf %s --contribute %s",
-      sh_quote(dir), sh_quote(LUA), CHECK_ONLY and "--check " or "",
-      sh_quote("../../" .. OUT .. "/" .. id), sh_quote("../../" .. BUILD .. "/" .. id .. ".manifest.lua"),
-      sh_quote("../../lib"), sh_quote("../index.html"), sh_quote("../contribute.html"))
-    local ok = os.execute(cmd)
-    if not ok then fail("book '%s' failed its own build (see above)", id)
-    else manifests[id] = dofile(BUILD .. "/" .. id .. ".manifest.lua") end
+    manifests[id] = {}
+    -- every book is built once per site language: docs/<book>/<lang>/
+    for _, lang in ipairs(LANGS) do
+      print("── " .. book.title .. " [" .. lang .. "]")
+      local mf = BUILD .. "/" .. id .. "." .. lang .. ".manifest.lua"
+      local cmd = string.format("cd %s && %s build.lua %s--lang %s --langs %s --out %s --manifest %s --lib %s --shelf %s --contribute %s",
+        sh_quote(dir), sh_quote(LUA), CHECK_ONLY and "--check " or "", lang, table.concat(LANGS, ","),
+        sh_quote("../../" .. OUT .. "/" .. id .. "/" .. lang), sh_quote("../../" .. mf),
+        sh_quote("../../lib"), sh_quote("../../index.html"), sh_quote("../../contribute.html"))
+      local ok = os.execute(cmd)
+      if not ok then fail("book '%s' failed its own build in '%s' (see above)", id, lang)
+      else manifests[id][lang] = dofile(mf) end
+    end
   end
 end
 
@@ -57,7 +64,6 @@ end
 local FIELD_TYPES = { text = true, textarea = true, select = true, number = true, url = true }
 local DEFAULT_MAX = { text = 140, url = 500, textarea = 4000 }
 local SHAPES = { page = true, segment = true, investigator = true, timeline = true, scene = true, source = true }
-local LANGS = site.langs
 
 local function check_text(t, where)
   if type(t) ~= "table" then fail("%s: missing text", where); return end
@@ -125,9 +131,13 @@ end
 local templates = prepare_templates(base_tpls, "contribute/templates.lua")
 
 local books_json = {}
+local function per_lang(f) local t = {}; for _, l in ipairs(LANGS) do t[l] = f(l) end; return t end
 for _, book in ipairs(books) do
-  local m = manifests[book.id]
-  if m then
+  local ms = manifests[book.id]
+  local m = ms and ms[LANGS[1]]
+  local complete = m and true
+  for _, l in ipairs(LANGS) do if not (ms and ms[l]) then complete = false end end
+  if complete then
     -- a book may add or replace templates in its own contrib.lua
     local tpls = templates
     local extra = "books/" .. book.id .. "/contrib.lua"
@@ -135,19 +145,22 @@ for _, book in ipairs(books) do
       tpls = setmetatable(prepare_templates(dofile(extra), extra), { __index = templates })
     end
     local pages, used = {}, {}
-    for _, p in ipairs(m.pages) do
+    for i, p in ipairs(m.pages) do
       for _, tid in ipairs(p.templates) do
         if not tpls[tid] then fail("book '%s': page '%s' offers unknown form template '%s'", book.id, p.id, tid) end
         used[tid] = tpls[tid]
       end
-      pages[p.id] = { title = p.title, section = p.section, kind = p.kind,
-                      templates = #p.templates > 0 and p.templates or json.array(),
-                      segments = #p.segments > 0 and p.segments or json.array() }
+      pages[p.id] = {
+        title = per_lang(function(l) return ms[l].pages[i].title end),
+        section = p.section, kind = p.kind,
+        templates = #p.templates > 0 and p.templates or json.array(),
+        segments = per_lang(function(l) local sg = ms[l].pages[i].segments; return #sg > 0 and sg or json.array() end),
+      }
     end
     local own = {}
     for tid, t in pairs(used) do if rawget(tpls, tid) and tpls ~= templates then own[tid] = t end end
     books_json[book.id] = {
-      title = book.title, subtitle = book.subtitle, system = book.system, author = book.author,
+      title = per_lang(function(l) return ms[l].title end), system = book.system, author = book.author,
       lang = book.lang, open = book.open_contributions and true or false,
       pages = pages, sections = m.sections,
       templates = next(own) and own or nil,   -- book-specific templates override shared ones
@@ -197,28 +210,38 @@ write("forms.json", json.encode(forms, " "))
 
 local FONTS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
   .. '<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Silkscreen:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">'
+local LANG_HEAD = read("shelf/lang-head.html")
+local LANG_SWITCH = '<div class="ms-langs" role="group" aria-label="Idioma / Language">'
+  .. '<button type="button" data-set-lang="pt" lang="pt" title="Português">PT</button>'
+  .. '<button type="button" data-set-lang="en" lang="en" title="English">EN</button></div>'
+-- bilingual inline text: both spans are in the page, CSS shows the active one
+local function L2(pt, en) return '<span data-l="pt">' .. pt .. '</span><span data-l="en">' .. en .. '</span>' end
 
+-- title = { pt = ..., en = ... }
 local function shell(title, desc, body, extra_head)
   return string.format([[<!doctype html>
-<html lang="en">
+<html lang="pt-BR" data-title-pt="%s" data-title-en="%s">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>%s</title>
 <meta name="description" content="%s">
 %s
+%s
 <link rel="stylesheet" href="stack.css">
 %s
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
-<header class="topbar"><a class="brand" href="index.html"><span class="sigil" aria-hidden="true"></span> %s</a></header>
+<a class="skip" href="#main">%s</a>
+<header class="topbar"><a class="brand" href="index.html"><span class="sigil" aria-hidden="true"></span> %s</a>%s</header>
 <main id="main">%s</main>
-<footer class="foot"><p>%s · stories by %s and contributors · <a href="terms.html">Contribution terms</a> · <a href="%s">Source on GitHub</a></p></footer>
+<footer class="foot"><p>%s · %s · <a href="terms.html">%s</a> · <a href="%s">%s</a></p></footer>
 </body>
 </html>
-]], esc(title), esc(desc), FONTS, extra_head or "", esc(site.title), body,
-    esc(site.title), esc(site.owner), esc(site.repo_url))
+]], esc(title.pt), esc(title.en), esc(title.pt), esc(desc), LANG_HEAD, FONTS, extra_head or "",
+    L2("Pular para o conteúdo", "Skip to content"), esc(site.title), LANG_SWITCH, body,
+    esc(site.title), L2("histórias de " .. esc(site.owner) .. " e colaboradores", "stories by " .. esc(site.owner) .. " and contributors"),
+    L2("Termo de contribuição", "Contribution terms"), esc(site.repo_url), L2("Código no GitHub", "Source on GitHub"))
 end
 
 -- Shelf and table (index.html). Ported from the Claude Design file
@@ -226,28 +249,27 @@ end
 -- shelf/shelf.paint.js + shelf/shelf.app.js run the room in the browser.
 do
   local STATUS = { complete = "completo", ["in-progress"] = "andamento", draft = "rascunho" }
-  local STATUS_PT = { completo = "completo", andamento = "em andamento", rascunho = "rascunho" }
   local shelf_books = {}
   local spines = {}
   for _, b in ipairs(books) do
-    local m, sp = manifests[b.id], b.spine or {}
-    -- table of contents: each section with its page titles
-    local toc, by_section = {}, {}
-    for _, p in ipairs(m.pages) do
-      by_section[p.section] = by_section[p.section] or {}
-      table.insert(by_section[p.section], p.title)
-    end
-    for _, sec in ipairs(m.sections) do
-      if by_section[sec] then toc[#toc + 1] = { s = sec, p = table.concat(by_section[sec], " · ") } end
+    local ms, sp = manifests[b.id], b.spine or {}
+    local function field(l, k) local t = b.i18n and b.i18n[l]; return (t and t[k]) or b[k] end
+    -- table of contents per language: each section with its page titles
+    local function toc_for(l)
+      local m, toc, by_section = ms[l], {}, {}
+      for _, p in ipairs(m.pages) do
+        by_section[p.section] = by_section[p.section] or {}
+        table.insert(by_section[p.section], p.title)
+      end
+      for _, sec in ipairs(m.sections) do
+        if by_section[sec] then toc[#toc + 1] = { s = m.section_names[sec] or sec, p = table.concat(by_section[sec], " · ") } end
+      end
+      return toc
     end
     -- where "Contribuir" leads: the book's chosen page, else the first page that takes contributions
     local cpage = b.contrib_page
-    if not cpage then for _, p in ipairs(m.pages) do if #p.templates > 0 then cpage = p.id; break end end end
-    local cover
-    if b.cover then
-      cover = read("books/" .. b.id .. "/" .. b.cover):gsub("<!%-%-.-%-%->%s*", "")
-        :gsub("{{AUTHOR}}", function() return esc(b.author:upper()) end)
-    end
+    if not cpage then for _, p in ipairs(ms[LANGS[1]].pages) do if #p.templates > 0 then cpage = p.id; break end end end
+    local cover_src = b.cover and read("books/" .. b.id .. "/" .. b.cover):gsub("<!%-%-.-%-%->%s*", "")
     local credits_file = "books/" .. b.id .. "/credits.lua"
     local contributors = file_exists(credits_file) and #dofile(credits_file) or 0
     local status = STATUS[b.status]
@@ -256,33 +278,56 @@ do
       if not (sp[k] or ""):match("^#%x%x%x%x%x%x$") then fail("%s: spine.%s must be a #rrggbb colour", b.id, k) end
     end
     local entry = {
-      id = b.id, title = b.title, system = b.system, status = status,
-      period = b.period or "—", place = b.place or "—", author = b.author,
-      kicker = b.kicker or b.system, synopsis = b.blurb or "", contributors = contributors,
+      id = b.id, system = b.system, status = status, author = b.author, contributors = contributors,
+      title = per_lang(function(l) return field(l, "title") end),
+      period = per_lang(function(l) return field(l, "period") or "—" end),
+      place = per_lang(function(l) return field(l, "place") or "—" end),
+      kicker = per_lang(function(l) return field(l, "kicker") or b.system end),
+      synopsis = per_lang(function(l) return field(l, "blurb") or "" end),
+      toc = per_lang(toc_for),
+      coverHtml = cover_src and per_lang(function(l)
+        return (cover_src:gsub("{{AUTHOR}}", function() return esc(b.author:upper()) end)
+          :gsub("{{TITLE}}", function() return esc(field(l, "title")) end)
+          :gsub("{{SYSTEM}}", function() return esc(b.system:upper()) end))
+      end) or nil,
+      href = per_lang(function(l) return b.id .. "/" .. l .. "/index.html" end),
+      contribHref = per_lang(function(l)
+        return cpage and ("contribute.html?book=" .. b.id .. "&page=" .. cpage .. "&lang=" .. l) or (b.id .. "/" .. l .. "/index.html")
+      end),
       color = sp.color, light = sp.light, band = sp.band, ink = sp.ink,
-      w = sp.w or 40, h = sp.h or 170, emblem = sp.emblem or false, labels = b.labels or false,
-      magic = b.magic, toc = toc, coverHtml = cover,
-      href = b.id .. "/index.html",
-      contribHref = cpage and ("contribute.html?book=" .. b.id .. "&page=" .. cpage) or (b.id .. "/index.html"),
+      w = sp.w or 40, h = sp.h or 170, emblem = sp.emblem or false, labels = b.labels or false, magic = b.magic,
     }
     shelf_books[#shelf_books + 1] = entry
+    local titles = {}
+    for _, l in ipairs(LANGS) do titles[#titles + 1] = string.format('<span data-l="%s">%s</span>', l, esc(entry.title[l])) end
     spines[#spines + 1] = string.format([[
             <li class="ms-book" data-id="%s" style="width:%dpx; height:%dpx;">
-              <a class="ms-spine" href="%s" draggable="false" aria-label="%s, %s, %s" style="--c:%s; --ink:%s; --light:%s; --band:%s;">
+              <a class="ms-spine" href="%s/" draggable="false" aria-label="%s, %s" style="--c:%s; --ink:%s; --light:%s; --band:%s;">
                 <span aria-hidden="true" class="ms-sp-line top"></span><span aria-hidden="true" class="ms-sp-line bot"></span>
                 <span aria-hidden="true" class="ms-sp-band top"></span><span aria-hidden="true" class="ms-sp-band bot"></span>
-                <span aria-hidden="true" class="ms-sp-title"><span>%s</span></span>%s
+                <span aria-hidden="true" class="ms-sp-title">%s</span>%s
               </a>%s
             </li>]],
-      b.id, entry.w, entry.h, entry.href, esc(b.title), esc(b.system), STATUS_PT[status] or "",
-      sp.color, sp.ink, sp.light, sp.band, esc(b.title),
+      b.id, entry.w, entry.h, b.id, esc(entry.title[LANGS[1]]), esc(b.system),
+      sp.color, sp.ink, sp.light, sp.band, table.concat(titles),
       entry.emblem and '\n                <span aria-hidden="true" class="ms-sp-emblem"></span>' or "",
       status == "andamento" and '\n              <span aria-hidden="true" class="ms-ribbon"></span>'
         or status == "rascunho" and '\n              <span aria-hidden="true" class="ms-draft1"></span><span aria-hidden="true" class="ms-draft2"></span>' or "")
+
+    -- docs/<book>/index.html: send readers to their language
+    write(b.id .. "/index.html", string.format([[<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>%s</title>
+%s
+<script>location.replace(window.msLang() + '/index.html' + location.hash);</script>
+</head><body style="background:#11111d;color:#e9e3d2;font-family:Georgia,serif;padding:24px">
+<p><a href="pt/index.html" style="color:#f3b04a">%s (Português)</a> · <a href="en/index.html" style="color:#f3b04a">%s (English)</a></p>
+</body></html>
+]], esc(entry.title[LANGS[1]]), LANG_HEAD, esc(entry.title.pt or ""), esc(entry.title.en or "")))
   end
   spines[#spines + 1] = [[
             <li class="ms-empty" style="height:168px;">
-              <a href="propor-livro.html" aria-label="Sua história aqui: como propor um livro novo"><span>Sua história aqui</span></a>
+              <a href="propor-livro.html" aria-label="Sua história aqui / Your story here"><span><span data-l="pt">Sua história aqui</span><span data-l="en">Your story here</span></span></a>
             </li>]]
   if #errors > 0 then
     io.stderr:write("\nShelf failed:\n")
@@ -292,31 +337,52 @@ do
   local data = json.encode({ books = shelf_books, circle = site.shelf_circle or "system", fog = site.shelf_fog ~= false })
     :gsub("</", "<\\/")
   local html = read("shelf/shelf.html")
-  local fills = { TITLE = esc(site.title .. " — uma estante de histórias de RPG"), TAGLINE = esc(site.tagline),
+  local fills = { TITLE = esc(site.title .. " — uma estante de histórias de RPG"), TITLE_EN = esc(site.title .. " — a shelf of RPG stories"),
+    TAGLINE = esc(site.tagline), LANGHEAD = LANG_HEAD, LANGSWITCH = LANG_SWITCH,
     SITE = esc(site.title), REPO = esc(site.repo_url), SPINES = table.concat(spines, "\n"), DATA = data }
-  html = html:gsub("{{(%u+)}}", function(k) return fills[k] end)
+  html = html:gsub("{{([%u_]+)}}", function(k) return fills[k] end)
   write("index.html", html)
   write("shelf.css", read("shelf/shelf.css"))
   write("shelf.js", "// Magic Stack shelf — generated by build.lua from shelf/shelf.paint.js and shelf/shelf.app.js\n"
     .. "(function () {\n'use strict';\n" .. read("shelf/shelf.paint.js") .. "\n" .. read("shelf/shelf.app.js") .. "\n})();\n")
 
   -- "Sua história aqui": how to propose a new book
+  local repo = esc(site.repo_url)
   local body = [[
 <div class="terms prose">
+<div data-l="pt">
 <h1>Propor um livro</h1>
 <p class="lede">O Magic Stack é uma estante aberta. Além de contribuir com as histórias que já estão nela, você pode propor um livro inteiro seu.</p>
 <h2>Como funciona</h2>
 <ul>
-<li><strong>Livros e páginas novas</strong> entram por um <em>pull request</em> no GitHub. Cada livro é uma pasta em <code>books/</code>, com a história escrita como dados em Lua, como em <a href="mist-over-the-funicular/index.html">The Mist over the Funicular</a>.</li>
+<li><strong>Livros e páginas novas</strong> entram por um <em>pull request</em> no GitHub. Cada livro é uma pasta em <code>books/</code>, com a história escrita como dados em Lua, como em <a href="mist-over-the-funicular/pt/index.html">A Névoa sobre o Funicular</a>.</li>
 <li>Copie a pasta do Mist, troque o conteúdo pelo seu, acrescente o livro em <code>library.lua</code> e rode <code>lua build.lua</code>. O build avisa o que estiver faltando ou inconsistente.</li>
+<li>O livro precisa existir em português e em inglês: o texto original fica em <code>data/</code> e a tradução em <code>data/&lt;idioma&gt;/</code>. O build confere se nada ficou sem tradução.</li>
 <li>Qualquer sistema serve: Call of Cthulhu, Tormenta20, D&amp;D, Old Dragon, Ordem Paranormal ou o seu.</li>
 <li>Todo livro proposto passa pela revisão do autor da estante antes de entrar, e segue o mesmo <a href="terms.html">Termo de Contribuição</a>.</li>
 </ul>
 <h2>Sem GitHub?</h2>
 <p>Comece contribuindo com uma história existente: cada página tem um botão <strong>Contribuir</strong> que abre um formulário simples. Se quiser propor um livro inteiro e não usa GitHub, escreva para o contato do <a href="terms.html">termo</a>.</p>
-<p><a href="]] .. esc(site.repo_url) .. [[">Ver o código no GitHub</a> · <a href="index.html">← Voltar à estante</a></p>
+<p><a href="]] .. repo .. [[">Ver o código no GitHub</a> · <a href="index.html">← Voltar à estante</a></p>
+</div>
+<div data-l="en">
+<h1>Propose a book</h1>
+<p class="lede">Magic Stack is an open shelf. Besides adding to the stories already on it, you can propose a whole book of your own.</p>
+<h2>How it works</h2>
+<ul>
+<li><strong>New books and new pages</strong> come in through a <em>pull request</em> on GitHub. Each book is a folder in <code>books/</code>, with the story written as Lua data, like <a href="mist-over-the-funicular/en/index.html">The Mist over the Funicular</a>.</li>
+<li>Copy the Mist folder, replace the content with yours, add the book to <code>library.lua</code> and run <code>lua build.lua</code>. The build tells you what is missing or inconsistent.</li>
+<li>The book has to exist in Portuguese and in English: the original text lives in <code>data/</code> and the translation in <code>data/&lt;language&gt;/</code>. The build checks that nothing is left untranslated.</li>
+<li>Any system works: Call of Cthulhu, Tormenta20, D&amp;D, Old Dragon, Ordem Paranormal or your own.</li>
+<li>Every proposed book is reviewed by the shelf's author before it goes in, and follows the same <a href="terms.html">Contribution Terms</a>.</li>
+</ul>
+<h2>No GitHub?</h2>
+<p>Start by adding to an existing story: every page has a <strong>Contribute</strong> button that opens a simple form. If you want to propose a whole book and don't use GitHub, write to the contact in the <a href="terms.html">terms</a>.</p>
+<p><a href="]] .. repo .. [[">See the code on GitHub</a> · <a href="index.html">← Back to the shelf</a></p>
+</div>
 </div>]]
-  write("propor-livro.html", shell("Propor um livro · " .. site.title, "Como propor um livro novo para a estante do Magic Stack.", body))
+  write("propor-livro.html", shell({ pt = "Propor um livro · " .. site.title, en = "Propose a book · " .. site.title },
+    "Como propor um livro novo para a estante do Magic Stack.", body))
 end
 
 -- Contribution form page (rendered client-side from forms.json)
@@ -327,11 +393,12 @@ do
   end
   local body = [[
 <div id="app" class="form-app" aria-live="polite">
-  <noscript><p>The contribution form needs JavaScript.</p></noscript>
-  <p class="loading">Loading the form…</p>
+  <noscript><p><span data-l="pt">O formulário de contribuição precisa de JavaScript.</span><span data-l="en">The contribution form needs JavaScript.</span></p></noscript>
+  <p class="loading"><span data-l="pt">Carregando o formulário…</span><span data-l="en">Loading the form…</span></p>
 </div>
 <script src="contribute.js" defer></script>]]
-  write("contribute.html", shell("Contribute · " .. site.title, "Send a contribution to a Magic Stack story.", body, head))
+  write("contribute.html", shell({ pt = "Contribuir · " .. site.title, en = "Contribute · " .. site.title },
+    "Envie uma contribuição para uma história do Magic Stack.", body, head))
   write("contribute.js", read("contribute/form.js"))
 end
 
@@ -386,13 +453,12 @@ do
   end
   local body = table.concat({
     '<div class="terms">',
-    '<p class="lang-switch"><a href="#pt" lang="pt">Português</a> · <a href="#en" lang="en">English</a></p>',
-    '<article id="pt" lang="pt" class="prose">', md(read("contribute/TERMOS.pt.md")), '</article>',
-    '<hr>',
-    '<article id="en" lang="en" class="prose">', md(read("contribute/TERMS.en.md")), '</article>',
+    '<article id="pt" lang="pt" data-l="pt" class="prose">', md(read("contribute/TERMOS.pt.md")), '</article>',
+    '<article id="en" lang="en" data-l="en" class="prose">', md(read("contribute/TERMS.en.md")), '</article>',
     '</div>',
   }, "\n")
-  write("terms.html", shell("Termo de Contribuição · " .. site.title, "How contributions, credit and consent work on Magic Stack.", body))
+  write("terms.html", shell({ pt = "Termo de Contribuição · " .. site.title, en = "Contribution Terms · " .. site.title },
+    "Como funcionam as contribuições, os créditos e o consentimento no Magic Stack.", body))
 end
 
 write("stack.css", read("contribute/stack.css"))

@@ -125,7 +125,9 @@ export function validate(sub, forms) {
   if (!page.templates.includes(sub.template)) return { error: "this page does not take that form", field: null };
   const tpl = (book.templates && book.templates[sub.template]) || forms.templates[sub.template];
   if (!tpl) return { error: "unknown form", field: null };
-  const segment = sub.segment ? page.segments.find((s) => s.id === sub.segment) : null;
+  // segments are listed per language (each edition has its own anchors)
+  const allSegs = Array.isArray(page.segments) ? page.segments : [].concat(...Object.values(page.segments || {}));
+  const segment = sub.segment ? allSegs.find((s) => s.id === sub.segment) : null;
   if (sub.segment && !segment) return { error: "unknown section", field: null };
   const lang = forms.site.langs.includes(sub.lang) ? sub.lang : forms.site.default_lang;
 
@@ -168,7 +170,7 @@ export function validate(sub, forms) {
 // ---------------------------------------------------------------------------
 // Markdown issue
 // ---------------------------------------------------------------------------
-const tx = (o, lang) => (o ? o[lang] || o.en : "");
+const tx = (o, lang) => (typeof o === "string" ? o : o ? o[lang] || o.en : "");
 // user text: neutralise @mentions, #refs and raw HTML in the issue
 const safe = (s) => s.replace(/@/g, "@​").replace(/#(\d)/g, "#​$1").replace(/</g, "&lt;");
 const quote = (s) => safe(s).split("\n").map((l) => "> " + l).join("\n");
@@ -186,8 +188,9 @@ function headline(v) {
 
 export function buildIssue(v, siteUrl, now) {
   const { book, page, segment, tpl, fields, contributor, consent, lang } = v;
-  const pageUrl = `${siteUrl}${book.id}/${page.id}.html${segment ? "#" + segment.id : ""}`;
-  const title = `[${book.title}] ${page.title}${segment ? " › " + segment.title : ""} — ${tx(tpl.title, "pt")}: ${headline(v)}`.slice(0, 250);
+  const pageUrl = `${siteUrl}${book.id}/${lang}/${page.id}.html${segment ? "#" + segment.id : ""}`;
+  const bookTitle = tx(book.title, "pt"), pageTitle = tx(page.title, "pt");
+  const title = `[${bookTitle}] ${pageTitle}${segment ? " › " + segment.title : ""} — ${tx(tpl.title, "pt")}: ${headline(v)}`.slice(0, 250);
 
   const content = tpl.fields
     .filter((f) => fields[f.id])
@@ -208,8 +211,8 @@ export function buildIssue(v, siteUrl, now) {
     "",
     "| | |",
     "|---|---|",
-    `| Livro | ${book.title} |`,
-    `| Página | [${page.title}](${pageUrl}) |`,
+    `| Livro | ${bookTitle} |`,
+    `| Página | [${pageTitle}](${pageUrl}) |`,
     `| Seção | ${segment ? segment.title : "página inteira"} |`,
     `| Formulário | \`${tpl.id}\` |`,
     `| Idioma do envio | ${lang} |`,

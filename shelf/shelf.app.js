@@ -21,6 +21,40 @@ const E = {
   zone: $('ms-zone'), drop: $('ms-droplabel'), cover: $('ms-cover'), slot: $('ms-cardslot'), hint: $('ms-hint'),
   card: $('ms-card'), props: $('ms-props'), mini: $('ms-mini'), drag: $('ms-drag'), overlay: $('ms-overlay'), live: $('ms-live'),
 };
+// ---------------- language ----------------
+const lang = () => (window.msLang ? window.msLang() : 'pt');
+const tr = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? (v[lang()] || v.pt || v.en) : v);
+const U = {
+  pt: {
+    status: { completo: 'Completo', andamento: 'Em andamento', rascunho: 'Rascunho' },
+    contents: 'SUMÁRIO', period: 'PERÍODO', place: 'LUGAR', author: 'AUTORIA', additions: 'ACRÉSCIMOS',
+    one: 'pessoa contribuiu', many: 'pessoas contribuíram', none: 'Nenhuma contribuição aceita ainda',
+    onTable: 'na mesa', open: 'Abrir', contribute: 'Contribuir', giveBack: 'Devolver à estante', keys: 'ENTER ABRE · ESC DEVOLVE',
+    drop: 'SOLTE PARA POUSAR', put: 'COLOQUE NA MESA',
+    lampTip: 'Arraste o lampião até um livro para ler o resumo', propTip: 'Arraste para mudar de lugar',
+    placed: (t) => `${t} está na mesa. Enter abre, Esc devolve à estante.`, back: (t) => `${t} voltou à estante.`, opened: (t) => `${t} aberto.`,
+    by: 'por', backShelf: '← Voltar à estante', enter: 'Abrir o grimório →',
+    tags: ['HISTÓRIA', 'FICÇÃO', 'HISTÓRIA + FICÇÃO'],
+    caseOf: (i, n) => `ESTANTE ${i} DE ${n}`, caseAria: (i, n) => `Estante ${i} de ${n}`, prev: 'Estante anterior', next: 'Próxima estante',
+    coverTip: 'Duplo clique para abrir · arraste até a estante para devolver', theBook: 'O livro',
+  },
+  en: {
+    status: { completo: 'Complete', andamento: 'In progress', rascunho: 'Draft' },
+    contents: 'CONTENTS', period: 'PERIOD', place: 'PLACE', author: 'AUTHOR', additions: 'ADDITIONS',
+    one: 'person contributed', many: 'people contributed', none: 'No contributions accepted yet',
+    onTable: 'on the table', open: 'Open', contribute: 'Contribute', giveBack: 'Back to the shelf', keys: 'ENTER OPENS · ESC PUTS BACK',
+    drop: 'RELEASE TO PLACE IT', put: 'PUT IT ON THE TABLE',
+    lampTip: 'Drag the lamp to a book to read its summary', propTip: 'Drag to move it',
+    placed: (t) => `${t} is on the table. Enter opens it, Esc puts it back.`, back: (t) => `${t} is back on the shelf.`, opened: (t) => `${t} opened.`,
+    by: 'by', backShelf: '← Back to the shelf', enter: 'Open the grimoire →',
+    tags: ['HISTORY', 'FICTION', 'HISTORY + FICTION'],
+    caseOf: (i, n) => `BOOKCASE ${i} OF ${n}`, caseAria: (i, n) => `Bookcase ${i} of ${n}`, prev: 'Previous bookcase', next: 'Next bookcase',
+    coverTip: 'Double-click to open · drag to the shelf to put it back', theBook: 'The book',
+  },
+};
+const u = () => U[lang()] || U.pt;
+const statusLabel = (st) => u().status[st] || st;
+
 const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const S = {
@@ -89,7 +123,7 @@ function arrangeRows() {
   cases = document.createElement('div'); cases.className = 'ms-cases';
   pages.forEach((pg, i) => {
     const page = document.createElement('div'); page.className = 'ms-casepage';
-    page.setAttribute('aria-label', `Estante ${i + 1} de ${pages.length}`);
+    page.setAttribute('aria-label', u().caseAria(i + 1, pages.length));
     page.append(rowEl(pg[0]), rowEl(pg[1]));
     cases.append(page);
   });
@@ -102,7 +136,7 @@ function updatePager() {
   const n = cases ? cases.children.length : 1;
   if (!pager) {
     pager = document.createElement('div'); pager.className = 'ms-pager';
-    pager.innerHTML = '<button type="button" class="ms-pg prev" aria-label="Estante anterior">◀</button><span class="ms-pg-label" aria-live="polite"></span><button type="button" class="ms-pg next" aria-label="Próxima estante">▶</button>';
+    pager.innerHTML = '<button type="button" class="ms-pg prev">◀</button><span class="ms-pg-label" aria-live="polite"></span><button type="button" class="ms-pg next">▶</button>';
     pager.querySelector('.prev').addEventListener('click', () => turnCase(-1));
     pager.querySelector('.next').addEventListener('click', () => turnCase(1));
     E.nav.after(pager);
@@ -110,7 +144,9 @@ function updatePager() {
   pager.hidden = n < 2;
   if (n < 2) return;
   const i = Math.round(cases.scrollLeft / Math.max(1, cases.clientWidth));
-  pager.querySelector('.ms-pg-label').textContent = `ESTANTE ${i + 1} DE ${n}`;
+  pager.querySelector('.ms-pg-label').textContent = u().caseOf(i + 1, n);
+  pager.querySelector('.prev').setAttribute('aria-label', u().prev);
+  pager.querySelector('.next').setAttribute('aria-label', u().next);
   pager.querySelector('.prev').disabled = i === 0;
   pager.querySelector('.next').disabled = i >= n - 1;
 }
@@ -149,7 +185,7 @@ tipEl.className = 'ms-tip'; tipEl.setAttribute('role', 'tooltip'); tipEl.hidden 
 E.root.append(tipEl);
 function showTip(id) {
   const b = book(id), sp = spineEl(id); if (!b || !sp) return;
-  tipEl.innerHTML = `<div class="ms-tip-title">${esc(b.title)}</div><div class="ms-tip-meta">${esc(b.system)} · ${STATUS[b.status]}</div><span class="ms-tip-arrow"></span>`;
+  tipEl.innerHTML = `<div class="ms-tip-title">${esc(tr(b.title))}</div><div class="ms-tip-meta">${esc(b.system)} · ${statusLabel(b.status)}</div><span class="ms-tip-arrow"></span>`;
   const rr = E.root.getBoundingClientRect(), r = sp.getBoundingClientRect();
   tipEl.style.left = (r.left + r.width / 2 - rr.left) + 'px';
   tipEl.style.top = (r.top - rr.top - 10) + 'px';
@@ -188,9 +224,9 @@ function updateCircle() {
 }
 
 function coverFront(b) {
-  if (b.coverHtml) return b.coverHtml;
+  if (b.coverHtml) return tr(b.coverHtml);
   return `<div class="ms-generic" style="background:${b.color}; color:${b.ink}; box-shadow:inset 0 0 0 2px #0b0b14, inset 0 0 0 8px ${b.light}, inset 0 0 0 10px #0b0b14;">
-    <span class="d" style="background:${b.band}"></span><div class="t">${esc(b.title)}</div><div class="m">${esc(b.system)}</div></div>`;
+    <span class="d" style="background:${b.band}"></span><div class="t">${esc(tr(b.title))}</div><div class="m">${esc(b.system)}</div></div>`;
 }
 
 function renderPlaced() {
@@ -199,31 +235,32 @@ function renderPlaced() {
   if (!pb) { E.cover.hidden = true; E.cover.innerHTML = ''; E.card.hidden = true; E.card.innerHTML = ''; return; }
   E.cover.hidden = false;
   E.cover.innerHTML = `
-    <div class="ms-cover-inside" aria-hidden="true"><div class="k">CONTENTS</div>${pb.toc.map((t) => `<div class="s">${esc(t.s)}</div>`).join('')}</div>
+    <div class="ms-cover-inside" aria-hidden="true"><div class="k">${u().contents}</div>${tr(pb.toc).map((t) => `<div class="s">${esc(t.s)}</div>`).join('')}</div>
     <div class="ms-lid" id="ms-lid">
       <div class="ms-face front">${coverFront(pb)}</div>
-      <div class="ms-face back" aria-hidden="true"><div class="t">${esc(pb.title)}</div><div class="m">${esc(pb.system)}</div></div>
+      <div class="ms-face back" aria-hidden="true"><div class="t">${esc(tr(pb.title))}</div><div class="m">${esc(pb.system)}</div></div>
     </div>`;
   const contrib = pb.contributors
-    ? `${pb.contributors} ${pb.contributors === 1 ? 'pessoa contribuiu' : 'pessoas contribuíram'}`
-    : 'Nenhuma contribuição aceita ainda';
-  E.card.setAttribute('aria-label', `${pb.title}, na mesa`);
+    ? `${pb.contributors} ${pb.contributors === 1 ? u().one : u().many}`
+    : u().none;
+  E.card.setAttribute('aria-label', `${tr(pb.title)}, ${u().onTable}`);
+  E.cover.title = u().coverTip;
   E.card.innerHTML = `
-    <div class="ms-card-meta"><span class="ms-status" style="background:${STATUS_BG[pb.status]}">${STATUS[pb.status]}</span><span>${esc(pb.system)}</span></div>
-    <h2>${esc(pb.title)}</h2>
-    <p>${esc(pb.synopsis)}</p>
+    <div class="ms-card-meta"><span class="ms-status" style="background:${STATUS_BG[pb.status]}">${statusLabel(pb.status)}</span><span>${esc(pb.system)}</span></div>
+    <h2>${esc(tr(pb.title))}</h2>
+    <p>${esc(tr(pb.synopsis))}</p>
     <dl>
-      <dt>PERÍODO</dt><dd>${esc(pb.period)}</dd>
-      <dt>LUGAR</dt><dd>${esc(pb.place)}</dd>
-      <dt>AUTORIA</dt><dd>${esc(pb.author)}</dd>
-      <dt>ACRÉSCIMOS</dt><dd>${contrib}</dd>
+      <dt>${u().period}</dt><dd>${esc(tr(pb.period))}</dd>
+      <dt>${u().place}</dt><dd>${esc(tr(pb.place))}</dd>
+      <dt>${u().author}</dt><dd>${esc(pb.author)}</dd>
+      <dt>${u().additions}</dt><dd>${contrib}</dd>
     </dl>
     <div class="ms-card-actions">
-      <button type="button" class="ms-btn" id="ms-open">Abrir</button>
-      <a class="ms-btn dark" href="${esc(pb.contribHref)}">Contribuir</a>
-      <button type="button" class="ms-linkbtn" id="ms-return">Devolver à estante</button>
+      <button type="button" class="ms-btn" id="ms-open">${u().open}</button>
+      <a class="ms-btn dark" href="${esc(tr(pb.contribHref))}">${u().contribute}</a>
+      <button type="button" class="ms-linkbtn" id="ms-return">${u().giveBack}</button>
     </div>
-    <span class="ms-card-keys">ENTER ABRE · ESC DEVOLVE</span>`;
+    <span class="ms-card-keys">${u().keys}</span>`;
   E.card.hidden = false;
   $('ms-open').addEventListener('click', open);
   $('ms-return').addEventListener('click', returnBook);
@@ -235,7 +272,7 @@ function updateDragUI() {
   E.nav.classList.toggle('is-drop', !!(fromTable && S.drag.over));
   const shelfDragging = !!S.drag && !fromTable;
   E.drop.hidden = !shelfDragging;
-  if (shelfDragging) E.drop.firstElementChild.textContent = S.drag.over ? 'SOLTE PARA POUSAR' : 'COLOQUE NA MESA';
+  if (shelfDragging) E.drop.firstElementChild.textContent = S.drag.over ? u().drop : u().put;
   const db = S.drag ? book(S.drag.id) : null;
   if (!S.drag || !db) { E.drag.hidden = true; E.drag.innerHTML = ''; E.drag.dataset.for = ''; return; }
   const key = db.id + '|' + S.drag.from;
@@ -244,8 +281,8 @@ function updateDragUI() {
     E.drag.style.setProperty('--c', db.color); E.drag.style.setProperty('--ink', db.ink);
     E.drag.style.setProperty('--light', db.light); E.drag.style.setProperty('--band', db.band);
     E.drag.innerHTML = fromTable
-      ? `<div class="ms-generic"><span class="d" style="background:${db.band}"></span><span class="t">${esc(db.title)}</span></div>`
-      : `<span class="ms-sp-band top"></span><span class="ms-sp-band bot"></span><span class="ms-sp-title"><span>${esc(db.title)}</span></span>`;
+      ? `<div class="ms-generic"><span class="d" style="background:${db.band}"></span><span class="t">${esc(tr(db.title))}</span></div>`
+      : `<span class="ms-sp-band top"></span><span class="ms-sp-band bot"></span><span class="ms-sp-title"><span>${esc(tr(db.title))}</span></span>`;
   }
   Object.assign(E.drag.style, { left: S.drag.x + 'px', top: S.drag.y + 'px', width: S.drag.w + 'px', height: S.drag.h + 'px', transform: 'rotate(6deg)' });
   E.drag.hidden = false;
@@ -257,8 +294,8 @@ function updateMini() {
   if (!mb || !sp) { E.mini.hidden = true; return; }
   const rr = E.root.getBoundingClientRect(), r = sp.getBoundingClientRect();
   const x = r.right - rr.left + 18;
-  E.mini.innerHTML = `<div class="meta"><span style="background:${STATUS_BG[mb.status]}">${STATUS[mb.status]}</span><span>${esc(mb.system)}</span></div>
-    <div class="t">${esc(mb.title)}</div><div class="s">${esc(mb.synopsis.split('. ')[0].replace(/\.$/, '') + '.')}</div>`;
+  E.mini.innerHTML = `<div class="meta"><span style="background:${STATUS_BG[mb.status]}">${statusLabel(mb.status)}</span><span>${esc(mb.system)}</span></div>
+    <div class="t">${esc(tr(mb.title))}</div><div class="s">${esc(tr(mb.synopsis).split('. ')[0].replace(/\.$/, '') + '.')}</div>`;
   E.mini.style.left = Math.min(x, rr.width - 270) + 'px';
   E.mini.style.top = Math.max(8, r.top - rr.top - 10) + 'px';
   E.mini.hidden = false;
@@ -282,7 +319,7 @@ function renderProps() {
     if (!el) {
       el = document.createElement('div');
       el.className = 'ms-prop';
-      el.title = d.id === 'lamp' ? 'Arraste o lampião até um livro para ler o resumo' : 'Arraste para mudar de lugar';
+      el.dataset.prop = d.id;
       el.style.width = d.w + 'px'; el.style.height = d.h + 'px';
       el.innerHTML = '<span class="ms-prop-shadow"></span>' + PROP_ART[d.k];
       el.addEventListener('pointerdown', (e) => propDown(e, d.id));
@@ -293,6 +330,7 @@ function renderProps() {
     const box = dr ? S.pdrag : propBox(d);
     if (!box) { el.hidden = true; return; }
     el.hidden = false;
+    el.title = d.id === 'lamp' ? u().lampTip : u().propTip;
     el.style.left = box.x + 'px'; el.style.top = box.y + 'px';
     el.style.transform = dr ? 'rotate(-4deg) translateY(-6px)' : 'none';
     el.style.zIndex = dr ? 70 : 1;
@@ -394,7 +432,7 @@ function place(id, from) {
   const was = S.placedId;
   S.magicColor = MAGIC[Math.floor(Math.random() * MAGIC.length)];
   S.placedId = id; S.drag = null; S.hoverId = null;
-  announce(`${b.title} está na mesa. Enter abre, Esc devolve à estante.`);
+  announce(u().placed(tr(b.title)));
   renderPlaced(); updateSpines(); updateDragUI(); updateCircle(); pulse(false); relayout();
   if (was !== id) requestAnimationFrame(animateLanding);
 }
@@ -422,7 +460,7 @@ function animateLanding() {
 function cleared(id) {
   const b = book(id);
   S.placedId = null;
-  announce(`${b ? b.title : 'O livro'} voltou à estante.`);
+  announce(u().back(b ? tr(b.title) : u().theBook));
   try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
   renderPlaced(); updateSpines(); updateCircle(); relayout();
   setTimeout(() => { const sp = spineEl(id); if (sp) sp.focus({ preventScroll: true }); }, 30);
@@ -451,33 +489,35 @@ function open() {
   lidAnim.onfinish = () => setTimeout(showSpread, 140);
 }
 
-function showSpread() {
+function showSpread(noAnim) {
   const b = book(S.placedId); if (!b) return;
   S.opened = true;
-  E.overlay.setAttribute('aria-label', b.title);
-  const tags = b.labels ? `<div class="ms-tags"><span style="background:#3e4a2c; color:#dfe7d9;">HISTORY</span><span style="background:#7a2f45; color:#dfe7d9;">FICTION</span><span style="background:#b8433e; color:#0b0b14;">HISTORY + FICTION</span></div>` : '';
+  E.overlay.setAttribute('aria-label', tr(b.title));
+  const tg = u().tags;
+  const tags = b.labels ? `<div class="ms-tags"><span style="background:#3e4a2c; color:#dfe7d9;">${tg[0]}</span><span style="background:#7a2f45; color:#dfe7d9;">${tg[1]}</span><span style="background:#b8433e; color:#0b0b14;">${tg[2]}</span></div>` : '';
   E.overlay.innerHTML = `
     <div class="ms-spread" id="ms-spread" style="box-shadow:0 0 0 8px ${b.color}, 0 0 0 12px #0b0b14, 18px 22px 0 12px rgba(0,0,0,.6);">
       <div class="ms-page l">
-        <div class="kick">${esc(b.kicker)}</div>
-        <h2>${esc(b.title)}</h2>
-        <p class="syn">${esc(b.synopsis)}</p>
-        <div class="by">by ${esc(b.author)}</div>
+        <div class="kick">${esc(tr(b.kicker))}</div>
+        <h2>${esc(tr(b.title))}</h2>
+        <p class="syn">${esc(tr(b.synopsis))}</p>
+        <div class="by">${u().by} ${esc(b.author)}</div>
         ${tags}
       </div>
       <div class="ms-page r">
-        <div class="ck">CONTENTS</div>
-        ${b.toc.map((t) => `<div class="ms-toc"><div class="s">${esc(t.s)}</div><div class="p">${esc(t.p)}</div></div>`).join('')}
+        <div class="ck">${u().contents}</div>
+        ${tr(b.toc).map((t) => `<div class="ms-toc"><div class="s">${esc(t.s)}</div><div class="p">${esc(t.p)}</div></div>`).join('')}
       </div>
     </div>
     <div class="ms-overlay-actions">
-      <button type="button" class="ms-btn dark sm" id="ms-close">← Voltar à estante</button>
-      <a class="ms-btn sm" id="ms-enter" href="${esc(b.href)}">Abrir o grimório →</a>
+      <button type="button" class="ms-btn dark sm" id="ms-close">${u().backShelf}</button>
+      <a class="ms-btn sm" id="ms-enter" href="${esc(tr(b.href))}">${u().enter}</a>
     </div>`;
   E.overlay.hidden = false;
   $('ms-close').addEventListener('click', closeOpened);
   const sp = $('ms-spread'), cv = E.cover;
-  if (isReduced() || !cv) E.overlay.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150 });
+  if (noAnim) { /* language switch: redraw in place */ }
+  else if (isReduced() || !cv) E.overlay.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150 });
   else {
     const c = cv.getBoundingClientRect(), t = sp.getBoundingClientRect();
     const src = { l: c.left - c.width, t: c.top, w: c.width * 2, h: c.height };
@@ -485,8 +525,7 @@ function showSpread() {
     sp.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${src.w / t.width}, ${src.h / t.height})` }, { transform: 'none' }], { duration: 480, easing: 'cubic-bezier(.5,0,.2,1)' });
     E.overlay.animate([{ backgroundColor: 'rgba(11,11,20,0)' }, { backgroundColor: 'rgba(11,11,20,1)' }], { duration: 480 });
   }
-  $('ms-enter').focus({ preventScroll: true });
-  announce(`${b.title} aberto.`);
+  if (!noAnim) { $('ms-enter').focus({ preventScroll: true }); announce(u().opened(tr(b.title))); }
 }
 
 function closeOpened() {
@@ -637,7 +676,7 @@ function maybeDemo() {
     BOOKS.push(b);
     const li = document.createElement('li');
     li.className = 'ms-book'; li.dataset.id = b.id;
-    li.innerHTML = `<a class="ms-spine" href="#" draggable="false" aria-label="${esc(title)}, ${esc(system)}, ${STATUS[status].toLowerCase()}" style="--c:${color}; --ink:${ink}; --light:${light}; --band:${band};">`
+    li.innerHTML = `<a class="ms-spine" href="#" draggable="false" aria-label="${esc(title)}, ${esc(system)}" style="--c:${color}; --ink:${ink}; --light:${light}; --band:${band};">`
       + '<span aria-hidden="true" class="ms-sp-line top"></span><span aria-hidden="true" class="ms-sp-line bot"></span>'
       + '<span aria-hidden="true" class="ms-sp-band top"></span><span aria-hidden="true" class="ms-sp-band bot"></span>'
       + `<span aria-hidden="true" class="ms-sp-title"><span>${esc(title)}</span></span></a>`
@@ -653,6 +692,23 @@ window.addEventListener('pointerup', handleUp);
 window.addEventListener('pointercancel', handleUp);
 window.addEventListener('keydown', handleKey);
 window.addEventListener('resize', relayout);
+
+// Language switch: update the spines' links and labels, and redraw what JS wrote
+function applyLang() {
+  document.querySelectorAll('.ms-book').forEach((li) => {
+    const b = book(li.dataset.id), a = li.querySelector('.ms-spine');
+    if (!b || !a) return;
+    if (b.href && b.href !== '#') a.setAttribute('href', tr(b.href));
+    a.setAttribute('aria-label', `${tr(b.title)}, ${b.system}, ${statusLabel(b.status).toLowerCase()}`);
+  });
+  const lbl = document.querySelector('.ms-empty a');
+  if (lbl) lbl.setAttribute('aria-label', lang() === 'pt' ? 'Sua história aqui: como propor um livro novo' : 'Your story here: how to propose a new book');
+  if (S.placedId) { renderPlaced(); }
+  if (S.opened) showSpread(true);
+  if (cases) { cases.querySelectorAll('.ms-casepage').forEach((pg, i, all) => pg.setAttribute('aria-label', u().caseAria(i + 1, all.length))); }
+  updatePager(); renderProps(); updateMini(); hideTip(); relayout();
+}
+document.addEventListener('ms:lang', applyLang);
 window.addEventListener('pageshow', (e) => { if (e.persisted && S.opened) closeOpened(); });
 
 maybeDemo();
@@ -660,7 +716,7 @@ try {
   const last = localStorage.getItem(KEY);
   if (last && book(last)) { skipLand = true; S.placedId = last; }
 } catch (e) { /* ignore */ }
-renderPlaced(); updateDragUI(); updateCircle(); relayout();
+renderPlaced(); updateDragUI(); updateCircle(); applyLang();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
 if (window.ResizeObserver) new ResizeObserver(() => schedulePaint()).observe(E.root);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { sig = null; schedulePaint(); });

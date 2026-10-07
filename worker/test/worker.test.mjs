@@ -62,7 +62,8 @@ test("a valid submission opens one issue and returns its number", async () => {
   assert.equal(gh.url, "https://api.github.com/repos/murilloodev-web/magic-stack-contribuicoes/issues");
   assert.equal(gh.init.headers.authorization, "Bearer test-token");
   const issue = JSON.parse(gh.init.body);
-  assert.match(issue.title, /Ending A — Return to the Sea — Final: uma variação ou um novo: The Long Tide/);
+  assert.match(issue.title, /^\[A Névoa sobre o Funicular\] Final A — De Volta ao Mar — Final: uma variação ou um novo: The Long Tide/);
+  assert.match(issue.body, /mist-over-the-funicular\/pt\/ending-sea\.html/);
   assert.deepEqual(issue.labels, ["contribuição", "aguardando-revisão", "livro:mist-over-the-funicular", "tipo:ending"]);
   assert.match(issue.body, /Pseudônimo: \*\*Maré\*\*/);
   assert.match(issue.body, /ana@example\.com/);               // email normalised
@@ -135,6 +136,15 @@ test("segment drafts keep long-bracket-safe Lua and note the target page", () =>
   assert.ok(!v.error, v.error);
   const draft = luaDraft(v, new Date());
   assert.match(draft, /body = \[===\[/);
+});
+
+test("segments are accepted in either language", async () => {
+  const segs = FORMS.books["mist-over-the-funicular"].pages["the-mist"].segments;
+  const ok = (seg, lang) => validate(sub({ page: "the-mist", template: "mythos", segment: seg, lang,
+    fields: { name: "Salt", type: "ritual", summary: "x", what: "y", play: "z" } }), FORMS);
+  assert.ok(!ok(segs.pt[0].id, "pt").error);
+  assert.ok(!ok(segs.en[0].id, "en").error);
+  assert.equal(ok("nope", "pt").error, "unknown section");
 });
 
 test("CORS preflight and health check", async () => {

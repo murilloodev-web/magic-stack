@@ -1,0 +1,40 @@
+<!-- Language: PT-BR / EN. Picks ?lang=, then the saved choice, then the browser
+     language, before the page paints. Buttons with data-set-lang switch it;
+     elements marked data-l="pt" / data-l="en" show only in their language. -->
+<style>
+  html[data-lang="pt"] [data-l="en"], html[data-lang="en"] [data-l="pt"] { display: none !important; }
+  .ms-langs { display: flex; gap: 3px; z-index: 200; }
+  .ms-langs button { font: 700 11px/1 'Silkscreen', 'Courier New', monospace; letter-spacing: .06em; cursor: pointer;
+    border: 0; background: #22223a; color: #a29fb6; padding: 7px 9px; box-shadow: 0 0 0 2px #0b0b14; }
+  .ms-langs button:hover { color: #f3b04a; }
+  .ms-langs button[aria-pressed="true"] { background: #f3b04a; color: #0b0b14; }
+  .ms-langs button:focus-visible { outline: 3px solid #dfe7d9; outline-offset: 2px; }
+</style>
+<script>
+(function () {
+  var LANGS = ['pt', 'en'], d = document.documentElement, l = null;
+  try { l = localStorage.getItem('ms-lang'); } catch (e) {}
+  var q = new URLSearchParams(location.search).get('lang');
+  if (LANGS.indexOf(q) >= 0) l = q;
+  if (LANGS.indexOf(l) < 0) l = (navigator.language || '').toLowerCase().indexOf('pt') === 0 ? 'pt' : 'en';
+  function apply(n) {
+    d.setAttribute('data-lang', n); d.lang = n === 'pt' ? 'pt-BR' : 'en';
+    var t = d.getAttribute('data-title-' + n); if (t) document.title = t;
+    var bs = document.querySelectorAll('[data-set-lang]');
+    for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', String(bs[i].getAttribute('data-set-lang') === n));
+  }
+  apply(l);
+  window.msLang = function () { return d.getAttribute('data-lang'); };
+  window.msSetLang = function (n) {
+    if (LANGS.indexOf(n) < 0 || n === window.msLang()) return;
+    try { localStorage.setItem('ms-lang', n); } catch (e) {}
+    apply(n);
+    document.dispatchEvent(new CustomEvent('ms:lang', { detail: n }));
+  };
+  document.addEventListener('DOMContentLoaded', function () { apply(window.msLang()); });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button[data-set-lang]');
+    if (b) window.msSetLang(b.getAttribute('data-set-lang'));
+  });
+})();
+</script>

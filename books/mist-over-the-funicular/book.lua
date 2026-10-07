@@ -9,13 +9,30 @@ return {
   system   = "Call of Cthulhu 7e",
   genre    = "Investigative horror",
   author   = "Murillo França M. da Silva",
-  lang     = "en",
+  lang     = "en",           -- the language the story was written in (data/); others live in data/<lang>/
   status   = "complete",     -- complete | in-progress | draft
   blurb    = "In 1974 the government begins closing a century-old mountain railway to save money. Nobody told it what the railway was really carrying.",
   -- shelf card and the open-book spread
-  period   = "Maio–julho de 1974",
-  place    = "Paranapiacaba, SP",
+  period   = "May–July 1974",
+  place    = "Paranapiacaba, Brazil",
   kicker   = "A Call of Cthulhu 7th Edition scenario · Paranapiacaba, Brazil · May–July 1974",
+  cover_title = "The Mist over<br>the Funicular",
+  banner_alt = "Pixel-art dusk over the Serra do Mar: a tank wagon climbs the funicular toward the Castelinho while fog rises from the valley.",
+  -- the book in other languages: these fields replace the ones above, and the
+  -- story itself is translated in data/<lang>/ (the build checks nothing is missing)
+  i18n = {
+    pt = {
+      title    = "A Névoa sobre o Funicular",
+      subtitle = "Paranapiacaba, Brasil · Maio–julho de 1974",
+      genre    = "Horror investigativo",
+      blurb    = "Em 1974, o governo começa a fechar uma ferrovia centenária na serra para economizar dinheiro. Ninguém contou a ele o que essa ferrovia de fato carregava.",
+      period   = "Maio–julho de 1974",
+      place    = "Paranapiacaba, SP",
+      kicker   = "Um cenário de Call of Cthulhu 7ª Edição · Paranapiacaba, Brasil · Maio–julho de 1974",
+      cover_title = "A Névoa sobre<br>o Funicular",
+      banner_alt = "Entardecer em pixel art sobre a Serra do Mar: um vagão-tanque sobe o funicular rumo ao Castelinho enquanto o nevoeiro sobe do vale.",
+    },
+  },
   labels   = true,           -- the book tags every page History / Fiction / History + Fiction
   -- spine on the shelf (pixels at 1×) and the cover on the table
   spine    = { color = "#2e2550", light = "#3b3860", band = "#8e8aae", ink = "#dfe7d9",

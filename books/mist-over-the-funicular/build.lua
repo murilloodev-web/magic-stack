@@ -2,7 +2,8 @@
 --
 --   lua build.lua                      validate + build into docs/ (standalone)
 --   lua build.lua --check              validate only
---   lua build.lua --out DIR --manifest FILE --shelf URL --contribute URL
+--   lua build.lua --lang pt            build the Portuguese edition (translations in data/pt/)
+--   lua build.lua --out DIR --manifest FILE --shelf URL --contribute URL --lang L --langs en,pt
 --                                      how the Magic Stack root build.lua calls it
 --
 -- Validation stops the build on: unknown internal links, unknown or unused
@@ -30,13 +31,88 @@ local timeline     = dofile("data/timeline.lua")
 local flow         = dofile("data/flow.lua")
 local contact      = dofile("data/contact.lua")
 
+---------------------------------------------------------------------------
+-- Language: the story is written in book.lang; other editions overlay the
+-- translations in data/<lang>/ and the build fails if any text is missing.
+---------------------------------------------------------------------------
+local LIB = opts.lib or "../../lib"
+local BASE_LANG = book.lang or "en"
+local LANG = opts.lang or BASE_LANG
+local LANGS = {}
+for l in (opts.langs or LANG):gmatch("[^,]+") do LANGS[#LANGS + 1] = l end
+local T = assert(dofile(LIB .. "/book_strings.lua")[LANG], "no interface text for language " .. LANG)
+local i18n_errors = {}
+local function missing(fmt, ...) i18n_errors[#i18n_errors + 1] = string.format(fmt, ...) end
+
+if book.i18n and book.i18n[LANG] then
+  for k, v in pairs(book.i18n[LANG]) do book[k] = v end
+end
+if LANG ~= BASE_LANG then
+  local dir = "data/" .. LANG .. "/"
+  local tp = dofile(dir .. "pages.lua")
+  local known = {}
+  for _, p in ipairs(pages) do
+    known[p.id] = true
+    local t = tp[p.id]
+    if not t then missing("%spages.lua: no translation for page '%s'", dir, p.id)
+    else
+      if not t.title or not t.summary then missing("%spages.lua: '%s' needs title and summary", dir, p.id) end
+      p.title, p.summary = t.title or p.title, t.summary or p.summary
+      if p.body:sub(1, 1) ~= "@" then
+        if not t.body then missing("%spages.lua: no body for page '%s'", dir, p.id) else p.body = t.body end
+      end
+    end
+  end
+  for id in pairs(tp) do if not known[id] then missing("%spages.lua: page '%s' does not exist in the original", dir, id) end end
+
+  local ti = dofile(dir .. "investigators.lua")
+  for _, inv in ipairs(investigators) do
+    local t = ti[inv.id]
+    if not t then missing("%sinvestigators.lua: no translation for '%s'", dir, inv.id)
+    else
+      for _, k in ipairs({ "role", "occupation", "quote", "motivation", "hook", "gear" }) do
+        if t[k] then inv[k] = t[k] else missing("%sinvestigators.lua: '%s' has no %s", dir, inv.id, k) end
+      end
+      if not t.skills or #t.skills ~= #inv.skills then missing("%sinvestigators.lua: '%s' needs %d skill names", dir, inv.id, #inv.skills)
+      else for i, name in ipairs(t.skills) do inv.skills[i] = { name, inv.skills[i][2] } end end
+    end
+  end
+
+  local tt = dofile(dir .. "timeline.lua")
+  if #tt ~= #timeline then missing("%stimeline.lua: %d entries, the original has %d", dir, #tt, #timeline)
+  else for i, t in ipairs(tt) do timeline[i].year, timeline[i].text = t.year or timeline[i].year, t.text end end
+
+  local tf = dofile(dir .. "flow.lua")
+  for _, n in ipairs(flow.nodes) do
+    local t = tf[n.id]
+    if not t then missing("%sflow.lua: no translation for scene '%s'", dir, n.id)
+    else
+      n.title = t.title or n.title
+      if n.text then if t.text then n.text = t.text else missing("%sflow.lua: scene '%s' has no text", dir, n.id) end end
+      if n.next and #n.next > 0 then
+        if not t.when or #t.when ~= #n.next then missing("%sflow.lua: scene '%s' needs %d exit conditions", dir, n.id, #n.next)
+        else for i, e in ipairs(n.next) do e.when = t.when[i] end end
+      end
+    end
+  end
+
+  local tc = dofile(dir .. "contact.lua")
+  if #tc ~= #contact.tiers then missing("%scontact.lua: %d tiers, the original has %d", dir, #tc, #contact.tiers)
+  else for i, t in ipairs(tc) do contact.tiers[i].name, contact.tiers[i].effect = t.name, t.effect end end
+
+  local ts = dofile(dir .. "sources.lua")
+  for _, src in ipairs(sources) do
+    if ts[src.id] then src.note = ts[src.id] else missing("%ssources.lua: no note for source '%s'", dir, src.id) end
+  end
+end
+
 local SITE_TITLE = book.title
 local AUTHOR     = book.author
 
 ---------------------------------------------------------------------------
 -- Error collection
 ---------------------------------------------------------------------------
-local errors = {}
+local errors = i18n_errors
 local function fail(fmt, ...) errors[#errors + 1] = string.format(fmt, ...) end
 
 ---------------------------------------------------------------------------
@@ -91,8 +167,8 @@ end
 
 local function url_part(s) return (s:gsub("[^%w%-_.~]", function(c) return string.format("%%%02X", c:byte()) end)) end
 local function contrib_url(page_id, seg)
-  return string.format("%s?book=%s&amp;page=%s%s", opts.contribute, url_part(book.id), url_part(page_id),
-    seg and ("&amp;seg=" .. url_part(seg)) or "")
+  return string.format("%s?book=%s&amp;page=%s%s&amp;lang=%s", opts.contribute, url_part(book.id), url_part(page_id),
+    seg and ("&amp;seg=" .. url_part(seg)) or "", LANG)
 end
 
 local source_index, source_used = {}, {}
@@ -114,7 +190,7 @@ function coc.damage_bonus(c)
   local t = c.STR + c.SIZ
   if t <= 64  then return "−2", -2
   elseif t <= 84  then return "−1", -1
-  elseif t <= 124 then return "None", 0
+  elseif t <= 124 then return T.inv.none, 0
   elseif t <= 164 then return "+1D4", 1
   else return "+1D6", 2 end
 end
@@ -241,10 +317,19 @@ end
 -- inline markup; `from` is the page id doing the linking
 local function inline(s, from, cited)
   s = esc(s)
-  -- "the [[castelinho]]" should read "the Castelinho", not "the The Castelinho"
-  s = s:gsub("([Tt]he )%[%[([%w%-]+)%]%]", function(article, id)
+  -- "the [[castelinho]]" should read "the Castelinho", not "the The Castelinho";
+  -- likewise "no [[winter-festival]]" reads "no Festival de Inverno" in Portuguese
+  s = s:gsub("(%f[%a][%a\195\128-\195\191]+ )%[%[([%w%-]+)%]%]", function(word, id)
     local t = registry[id] and registry[id].title
-    if t and t:match("^The ") then return article .. "[[" .. id .. "|" .. t:sub(5) .. "]]" end
+    if not t then return nil end
+    local w = word:lower():gsub("%s+$", "")
+    local lead, rest = t:match("^(%S+) (.+)$")
+    if not lead then return nil end
+    local ARTICLES = { the = true, o = true, a = true, os = true, as = true }
+    local BEFORE = { the = true, o = true, a = true, os = true, as = true, no = true, na = true, nos = true, nas = true,
+      ["do"] = true, da = true, dos = true, das = true, ao = true, aos = true, ["\195\160"] = true, ["\195\160s"] = true,
+      pelo = true, pela = true, pelos = true, pelas = true, num = true, numa = true }
+    if ARTICLES[lead:lower()] and BEFORE[w] then return word .. "[[" .. id .. "|" .. rest .. "]]" end
   end)
   s = s:gsub("%[%[([^%]|]+)|?([^%]]*)%]%]", function(id, label)
     local target = registry[id]
@@ -265,13 +350,23 @@ local function inline(s, from, cited)
   end)
   s = s:gsub("%*%*(.-)%*%*", "<strong>%1</strong>")
   s = s:gsub("%*(.-)%*", "<em>%1</em>")
-  s = s:gsub("%(Fiction%)", '<span class="tag tag-fiction">Fiction</span>')
-  s = s:gsub("%(History%)", '<span class="tag tag-history">History</span>')
   s = s:gsub("%(History → Fiction%)", '<span class="tag tag-mixed">History → Fiction</span>')
+  s = s:gsub("%(História → Ficção%)", '<span class="tag tag-mixed">História → Ficção</span>')
+  s = s:gsub("%(Fiction%)", '<span class="tag tag-fiction">Fiction</span>')
+  s = s:gsub("%(Ficção%)", '<span class="tag tag-fiction">Ficção</span>')
+  s = s:gsub("%(History%)", '<span class="tag tag-history">History</span>')
+  s = s:gsub("%(História%)", '<span class="tag tag-history">História</span>')
   return s
 end
 
-local function slug(s) return (s:lower():gsub("[^%w]+", "-"):gsub("^%-+", ""):gsub("%-+$", "")) end
+local ACCENTS = { ["á"] = "a", ["à"] = "a", ["â"] = "a", ["ã"] = "a", ["ä"] = "a", ["é"] = "e", ["ê"] = "e", ["è"] = "e",
+  ["í"] = "i", ["ó"] = "o", ["ô"] = "o", ["õ"] = "o", ["ö"] = "o", ["ú"] = "u", ["ü"] = "u", ["ç"] = "c", ["ñ"] = "n",
+  ["Á"] = "a", ["À"] = "a", ["Â"] = "a", ["Ã"] = "a", ["É"] = "e", ["Ê"] = "e", ["Í"] = "i", ["Ó"] = "o", ["Ô"] = "o",
+  ["Õ"] = "o", ["Ú"] = "u", ["Ç"] = "c" }
+local function slug(s)
+  s = s:gsub("[\195][\128-\191]", function(c) return ACCENTS[c] or "" end)
+  return (s:lower():gsub("[^%w]+", "-"):gsub("^%-+", ""):gsub("%-+$", ""))
+end
 
 local function blocks(text, from, cited, toc)
   local out, para, list = {}, {}, {}
@@ -295,8 +390,8 @@ local function blocks(text, from, cited, toc)
       if toc then toc[#toc + 1] = { anchor = anchor, text = clean } end
       local seg_link = ""
       if registry[from] and templates_for(registry[from]) then
-        seg_link = string.format(' <a class="contrib-seg" href="%s" title="Contribute to “%s”">+ contribute</a>',
-          contrib_url(from, anchor), esc(clean))
+        seg_link = string.format(' <a class="contrib-seg" href="%s" title="%s">%s</a>',
+          contrib_url(from, anchor), esc(string.format(T.seg_title, clean)), T.seg_link)
       end
       out[#out + 1] = string.format('<h2 id="%s">%s%s</h2>', anchor, inline(h, from, cited), seg_link)
     elseif line:sub(1, 2) == "- " then
@@ -316,7 +411,7 @@ end
 ---------------------------------------------------------------------------
 -- Special bodies
 ---------------------------------------------------------------------------
-local KIND_LABEL = { history = "History", fiction = "Fiction", mixed = "History + Fiction" }
+local KIND_LABEL = T.kinds
 
 local function render_timeline(from, cited)
   local rows = {}
@@ -326,7 +421,7 @@ local function render_timeline(from, cited)
       '<li class="tl tl-%s"><span class="tl-year">%s</span><span class="tag tag-%s">%s</span><p>%s%s</p></li>',
       t.kind, esc(t.year), t.kind, KIND_LABEL[t.kind], inline(t.text, from, cited), cite)
   end
-  return '<p class="lede">Documented events carry a citation. Scenario events are marked <span class="tag tag-fiction">Fiction</span>.</p>'
+  return '<p class="lede">' .. T.timeline_lede .. '</p>'
     .. '<ol class="timeline">' .. table.concat(rows, "\n") .. "</ol>"
 end
 
@@ -372,13 +467,13 @@ local function render_flow_svg()
       '<a href="#scene-%s"><rect x="%.0f" y="%.0f" width="%d" height="%d" rx="6" class="node%s"/>'
       .. '<text x="%.0f" y="%.0f" class="node-label">%s</text></a>',
       n.id, p.x - BW / 2, p.y, BW, BH, n.ending and " node-end" or "",
-      p.x, p.y + BH / 2 + 5, esc(n.ending and n.title:match("^(Ending %a)") or label))
+      p.x, p.y + BH / 2 + 5, esc(n.ending and (n.title:match("^(.-)%s+—") or label) or label))
   end
   return string.format(
-    '<figure class="flow"><svg viewBox="0 0 %d %d" role="img" aria-label="Scenario flow diagram">'
+    '<figure class="flow"><svg viewBox="0 0 %d %d" role="img" aria-label="' .. T.flow_aria .. '">'
     .. '<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
     .. '<path d="M0 0 L10 5 L0 10 z" class="arrowhead"/></marker></defs>%s%s</svg>'
-    .. '<figcaption>Each box is a scene; click one to jump to it. Hover an arrow to see what opens that path.</figcaption></figure>',
+    .. '<figcaption>' .. T.flow_caption .. '</figcaption></figure>',
     W, H, table.concat(edges), table.concat(boxes))
 end
 
@@ -391,7 +486,7 @@ local function render_flow(from, cited)
         e.to, esc(nodes[e.to].title), esc(e.when))
     end
     cards[#cards + 1] = string.format(
-      '<section class="scene%s" id="scene-%s"><h3>%s</h3>%s%s<p class="scene-page">Read more: %s</p></section>',
+      '<section class="scene%s" id="scene-%s"><h3>%s</h3>%s%s<p class="scene-page">' .. T.read_more .. ' %s</p></section>',
       n.ending and " scene-end" or "", n.id, esc(n.title),
       n.text and ("<p>" .. inline(n.text, from, cited) .. "</p>") or "",
       #exits > 0 and ('<ul class="exits">' .. table.concat(exits) .. "</ul>") or "",
@@ -399,7 +494,7 @@ local function render_flow(from, cited)
   end
   local reach_count = 0
   for _ in pairs(reachable) do reach_count = reach_count + 1 end
-  return string.format('<p class="lede">%d scenes, %d endings. Every scene is reachable from the arrival, and every path leads to an ending; the build script checks both.</p>',
+  return string.format('<p class="lede">' .. T.flow_lede .. '</p>',
       #flow.nodes, ending_count)
     .. render_flow_svg() .. table.concat(cards, "\n")
 end
@@ -416,7 +511,7 @@ local function render_contact()
       '<tr><td class="c-range">%s</td><td><strong>%s</strong><span class="pips" aria-hidden="true">%s</span><p>%s</p></td></tr>',
       range, esc(t.name), table.concat(pips), esc(t.effect))
   end
-  return '<div class="table-wrap"><table class="contact"><thead><tr><th>Contact</th><th>Effect</th></tr></thead><tbody>'
+  return '<div class="table-wrap"><table class="contact"><thead><tr><th>' .. T.contact_head[1] .. '</th><th>' .. T.contact_head[2] .. '</th></tr></thead><tbody>'
     .. table.concat(rows) .. "</tbody></table></div>"
 end
 
@@ -428,7 +523,7 @@ local function render_sources()
       .. '<span class="src-pub">%s</span><p>%s</p></div></li>',
       s.id, i, esc(s.url), esc(s.title), esc(s.publisher), esc(s.note))
   end
-  return '<p class="lede">Real-world references behind the history in this grimoire. External links open in a new tab.</p>'
+  return '<p class="lede">' .. T.sources_lede .. '</p>'
     .. '<ol class="sources">' .. table.concat(items, "\n") .. "</ol>"
 end
 
@@ -437,12 +532,12 @@ local function render_investigator(inv, from, cited)
   local chars = {}
   for _, k in ipairs({ "STR", "CON", "SIZ", "DEX", "APP", "INT", "POW", "EDU" }) do
     local r, h, x = coc.split(c[k])
-    chars[#chars + 1] = string.format('<div class="stat"><span class="stat-k">%s</span><span class="stat-v">%d</span><span class="stat-hx">%d / %d</span></div>', k, r, h, x)
+    chars[#chars + 1] = string.format('<div class="stat"><span class="stat-k">%s</span><span class="stat-v">%d</span><span class="stat-hx">%d / %d</span></div>', T.inv.chars[k], r, h, x)
   end
   local db, build = coc.damage_bonus(c)
   local derived = {
-    { "Hit Points", coc.hp(c) }, { "Sanity", coc.san(c) }, { "Magic Points", coc.mp(c) },
-    { "Move", coc.move(c) }, { "Damage Bonus", db }, { "Build", build },
+    { T.inv.derived[1], coc.hp(c) }, { T.inv.derived[2], coc.san(c) }, { T.inv.derived[3], coc.mp(c) },
+    { T.inv.derived[4], coc.move(c) }, { T.inv.derived[5], db }, { T.inv.derived[6], build },
   }
   local der = {}
   for _, d in ipairs(derived) do
@@ -458,16 +553,17 @@ local function render_investigator(inv, from, cited)
   return table.concat({
     string.format('<blockquote class="epigraph">“%s”</blockquote>', esc(inv.quote)),
     string.format('<p class="occupation">%s</p>', esc(inv.occupation)),
-    "<h2 id=\"motivation\">Motivation</h2><p>" .. inline(inv.motivation, from, cited) .. "</p>",
-    "<h2 id=\"personal-hook\">Personal hook</h2><p>" .. inline(inv.hook, from, cited) .. "</p>",
-    '<h2 id="characteristics">Characteristics</h2><p class="hint">Regular value, then Hard (½) / Extreme (⅕).</p>',
+    '<h2 id="motivation">' .. T.inv.motivation .. '</h2><p>' .. inline(inv.motivation, from, cited) .. "</p>",
+    '<h2 id="personal-hook">' .. T.inv.hook .. '</h2><p>' .. inline(inv.hook, from, cited) .. "</p>",
+    '<h2 id="characteristics">' .. T.inv.characteristics .. '</h2><p class="hint">' .. T.inv.char_hint .. '</p>',
     '<div class="stats">' .. table.concat(chars) .. "</div>",
     '<div class="derived-row">' .. table.concat(der) .. "</div>",
-    '<p class="hint">Derived values are computed by <code>build.lua</code> from the CoC 7e rules.</p>',
-    '<h2 id="key-skills">Key skills</h2><div class="table-wrap"><table class="skills"><thead><tr><th>Skill</th><th>Regular</th><th>Hard</th><th>Extreme</th></tr></thead><tbody>'
+    '<p class="hint">' .. T.inv.derived_hint .. '</p>',
+    '<h2 id="key-skills">' .. T.inv.skills .. '</h2><div class="table-wrap"><table class="skills"><thead><tr><th>'
+      .. table.concat(T.inv.skills_head, "</th><th>") .. '</th></tr></thead><tbody>'
       .. table.concat(skills) .. "</tbody></table></div>",
-    '<h2 id="equipment">Equipment (1974)</h2><p>' .. esc(inv.gear) .. "</p>",
-    '<h2 id="threads">Threads to pull</h2><ul class="pills"><li>' .. table.concat(rel, "</li><li>") .. "</li></ul>",
+    '<h2 id="equipment">' .. T.inv.gear .. '</h2><p>' .. esc(inv.gear) .. "</p>",
+    '<h2 id="threads">' .. T.inv.threads .. '</h2><ul class="pills"><li>' .. table.concat(rel, "</li><li>") .. "</li></ul>",
   }, "\n")
 end
 
@@ -484,7 +580,7 @@ local function nav_html(current)
           p.id == current and ' aria-current="page"' or "", esc(p.title))
       end
     end
-    out[#out + 1] = string.format('<h4>%s</h4><ul>%s</ul>', esc(section), table.concat(items))
+    out[#out + 1] = string.format('<h4>%s</h4><ul>%s</ul>', esc(T.sections[section] or section), table.concat(items))
   end
   return table.concat(out)
 end
@@ -492,9 +588,23 @@ end
 local FONTS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
   .. '<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Silkscreen:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">'
 
+-- The language switch: the same page in every edition, top right of the bar.
+local LANG_NAMES = { en = { "EN", "English" }, pt = { "PT", "Português" } }
+local function lang_switch(current)
+  if #LANGS < 2 then return "" end
+  local file = (current or "index") .. ".html"
+  local links = {}
+  for _, l in ipairs(LANGS) do
+    local n = LANG_NAMES[l] or { l:upper(), l }
+    links[#links + 1] = string.format('<a href="../%s/%s" hreflang="%s" lang="%s" data-set-lang="%s" title="%s"%s>%s</a>',
+      l, file, l, l, l, n[2], l == LANG and ' aria-current="true"' or "", n[1])
+  end
+  return '<nav class="lang-switch" aria-label="' .. T.language .. '">' .. table.concat(links) .. "</nav>"
+end
+
 local function layout(p, title, content, current)
   return string.format([[<!doctype html>
-<html lang="en">
+<html lang="%s">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -504,27 +614,41 @@ local function layout(p, title, content, current)
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#main">%s</a>
 <header class="topbar">
   <div class="topbar-left">%s<a class="brand" href="index.html"><span class="sigil" aria-hidden="true"></span> %s</a></div>
-  <button class="menu" aria-expanded="false" aria-controls="nav">Contents</button>
+  <div class="topbar-right">
+    <button class="menu" aria-expanded="false" aria-controls="nav">%s</button>
+    %s
+  </div>
 </header>
 <div class="shell">
-  <nav id="nav" class="nav" aria-label="Grimoire contents">%s</nav>
+  <nav id="nav" class="nav" aria-label="%s">%s</nav>
   <main id="main">%s</main>
 </div>
 <footer class="foot">
-  <p><em>%s</em> — an original Call of Cthulhu 7e scenario by %s. Built from Lua data with <code>build.lua</code>.</p>
+  <p>%s</p>
 </footer>
 <script>
   const b=document.querySelector('.menu'),n=document.getElementById('nav');
   b.addEventListener('click',()=>{const o=n.classList.toggle('open');b.setAttribute('aria-expanded',o)});
+  // language switch: keep the reader at the same section (anchors differ per language)
+  const hs=()=>[...document.querySelectorAll('.prose h2[id]')];
+  document.querySelectorAll('[data-set-lang]').forEach(a=>a.addEventListener('click',e=>{
+    try{localStorage.setItem('ms-lang',a.dataset.setLang)}catch(_){}
+    const i=hs().findIndex(h=>'#'+h.id===decodeURIComponent(location.hash));
+    if(i>=0){e.preventDefault();location.href=a.getAttribute('href')+'#s'+i}
+  }));
+  const m=location.hash.match(/^#s(\d+)$/);
+  if(m){const k=+m[1],h=hs()[k];if(h){history.replaceState(null,'','#'+h.id);h.scrollIntoView()}}
 </script>
 </body>
 </html>
-]], esc(title), esc(p and p.summary or "An investigation grimoire for Call of Cthulhu 7th Edition, set in Paranapiacaba, Brazil, 1974."),
-    FONTS, opts.shelf and string.format('<a class="shelf-link" href="%s" title="Back to the Magic Stack shelf">← Shelf</a>', opts.shelf) or "",
-    esc(SITE_TITLE), nav_html(current), content, esc(SITE_TITLE), esc(AUTHOR))
+]], T.html_lang, esc(title), esc(p and p.summary or book.blurb or ""),
+    FONTS, T.skip,
+    opts.shelf and string.format('<a class="shelf-link" href="%s" title="%s">%s</a>', opts.shelf, esc(T.shelf_title), T.shelf) or "",
+    esc(SITE_TITLE), T.contents, lang_switch(current), esc(T.nav_label), nav_html(current), content,
+    string.format(T.footer, esc(SITE_TITLE), esc(AUTHOR)))
 end
 
 local function render_page(p, idx)
@@ -544,7 +668,7 @@ end
 local function finish_page(r)
   local p = r.page
   local parts = {
-    string.format('<p class="crumb">%s</p>', esc(p.section)),
+    string.format('<p class="crumb">%s</p>', esc(T.sections[p.section] or p.section)),
     string.format('<h1>%s</h1>', esc(p.title)),
     string.format('<p class="meta"><span class="tag tag-%s">%s</span> <span class="summary">%s</span></p>',
       p.kind, KIND_LABEL[p.kind], esc(p.summary or "")),
@@ -552,7 +676,7 @@ local function finish_page(r)
   if #r.toc >= 3 then
     local t = {}
     for _, h in ipairs(r.toc) do t[#t + 1] = string.format('<li><a href="#%s">%s</a></li>', h.anchor, esc(h.text)) end
-    parts[#parts + 1] = '<nav class="onpage" aria-label="On this page"><span>On this page</span><ul>' .. table.concat(t) .. "</ul></nav>"
+    parts[#parts + 1] = '<nav class="onpage" aria-label="' .. T.on_this_page .. '"><span>' .. T.on_this_page .. '</span><ul>' .. table.concat(t) .. "</ul></nav>"
   end
   parts[#parts + 1] = '<article class="prose">' .. r.body .. "</article>"
 
@@ -564,7 +688,7 @@ local function finish_page(r)
     end
   end
   if #refs > 0 then
-    parts[#parts + 1] = '<aside class="refs"><h2 id="references">References on this page</h2><ul>' .. table.concat(refs) .. "</ul></aside>"
+    parts[#parts + 1] = '<aside class="refs"><h2 id="references">' .. T.refs_here .. '</h2><ul>' .. table.concat(refs) .. "</ul></aside>"
   end
 
   local bl = {}
@@ -574,20 +698,18 @@ local function finish_page(r)
     end
   end
   if #bl > 0 then
-    parts[#parts + 1] = '<aside class="backlinks"><h2 id="referenced-from">Referenced from</h2><ul class="pills">' .. table.concat(bl) .. "</ul></aside>"
+    parts[#parts + 1] = '<aside class="backlinks"><h2 id="referenced-from">' .. T.referenced_from .. '</h2><ul class="pills">' .. table.concat(bl) .. "</ul></aside>"
   end
 
   if templates_for(p) then
-    parts[#parts + 1] = string.format('<aside class="contrib"><h2 id="contribute">Add to this page</h2>'
-      .. '<p>Have a character, a scene, a clue or a correction that belongs here? Send it in. '
-      .. 'Every contribution is reviewed by the author, and accepted ones are credited in the book.</p>'
-      .. '<a class="btn" href="%s">Contribute to “%s”</a></aside>', contrib_url(p.id), esc(p.title))
+    parts[#parts + 1] = string.format('<aside class="contrib"><h2 id="contribute">%s</h2><p>%s</p><a class="btn" href="%s">%s</a></aside>',
+      T.add_title, T.add_text, contrib_url(p.id), esc(string.format(T.add_btn, p.title)))
   end
 
   local prev, nxt = order[r.idx - 1], order[r.idx + 1]
-  parts[#parts + 1] = string.format('<nav class="pager" aria-label="Page navigation">%s%s</nav>',
-    prev and string.format('<a class="prev" href="%s.html"><span>Previous</span>%s</a>', prev.id, esc(prev.title)) or "<span></span>",
-    nxt and string.format('<a class="next" href="%s.html"><span>Next</span>%s</a>', nxt.id, esc(nxt.title)) or "<span></span>")
+  parts[#parts + 1] = string.format('<nav class="pager" aria-label="' .. (LANG == "pt" and "Navegação entre páginas" or "Page navigation") .. '">%s%s</nav>',
+    prev and string.format('<a class="prev" href="%s.html"><span>' .. T.previous .. '</span>%s</a>', prev.id, esc(prev.title)) or "<span></span>",
+    nxt and string.format('<a class="next" href="%s.html"><span>' .. T.next .. '</span>%s</a>', nxt.id, esc(nxt.title)) or "<span></span>")
 
   return layout(p, p.title .. " · " .. SITE_TITLE, table.concat(parts, "\n"), p.id)
 end
@@ -604,24 +726,21 @@ local function render_index()
       end
     end
     sections[#sections + 1] = string.format('<section class="toc-section"><h2 id="%s">%s</h2><div class="cards">%s</div></section>',
-      slug(section), esc(section), table.concat(cards))
+      slug(section), esc(T.sections[section] or section), table.concat(cards))
   end
   local content = table.concat({
     '<div class="cover">',
-    '<img class="banner" src="banner.svg" width="192" height="72" alt="Pixel-art dusk over the Serra do Mar: a tank wagon climbs the funicular toward the Castelinho while fog rises from the valley.">',
-    '<p class="kicker">A Call of Cthulhu 7th Edition scenario · Paranapiacaba, Brazil · May–July 1974</p>',
-    '<h1 class="cover-title">The Mist over<br>the Funicular</h1>',
-    '<p class="cover-lede">In 1974 the government begins closing a century-old mountain railway to save money. '
-      .. 'Nobody told it what the railway was really carrying.</p>',
-    '<div class="cover-actions"><a class="btn" href="synopsis.html">Open the grimoire</a>'
-      .. '<a class="btn btn-ghost" href="scenario-flow.html">See the scenario flow</a></div>',
-    '<p class="legend"><span class="tag tag-history">History</span> documented and cited · '
-      .. '<span class="tag tag-fiction">Fiction</span> invented for play · '
-      .. '<span class="tag tag-mixed">History + Fiction</span> fiction built on fact</p>',
+    '<img class="banner" src="banner.svg" width="192" height="72" alt="' .. esc(book.banner_alt or "") .. '">',
+    '<p class="kicker">' .. esc(book.kicker or "") .. '</p>',
+    '<h1 class="cover-title">' .. (book.cover_title or esc(book.title)) .. '</h1>',
+    '<p class="cover-lede">' .. esc(book.blurb or "") .. '</p>',
+    '<div class="cover-actions"><a class="btn" href="synopsis.html">' .. T.cover.open .. '</a>'
+      .. '<a class="btn btn-ghost" href="scenario-flow.html">' .. T.cover.flow .. '</a></div>',
+    '<p class="legend">' .. T.cover.legend .. '</p>',
     '</div>',
     table.concat(sections),
   }, "\n")
-  return layout(nil, SITE_TITLE .. " — a Call of Cthulhu grimoire", content, "index")
+  return layout(nil, SITE_TITLE .. T.cover.title_suffix, content, "index")
 end
 
 ---------------------------------------------------------------------------
@@ -660,7 +779,9 @@ if opts.manifest then
                         templates = templates_for(p) or {}, segments = segs }
   end
   local f = assert(io.open(opts.manifest, "w"))
-  f:write(serialize({ id = book.id, pages = list, sections = SECTION_ORDER }))
+  local section_names = {}
+  for _, sec in ipairs(SECTION_ORDER) do section_names[sec] = T.sections[sec] or sec end
+  f:write(serialize({ id = book.id, lang = LANG, title = book.title, pages = list, sections = SECTION_ORDER, section_names = section_names }))
   f:close()
   print("✓ wrote manifest " .. opts.manifest)
 end

@@ -29,7 +29,7 @@
     const s = F.strings[key];
     return s ? (s[lang] || s.en).replace("{v}", F.site.terms_version) : key;
   };
-  const tx = (obj) => (obj ? obj[lang] || obj.en : "");
+  const tx = (obj) => (typeof obj === "string" ? obj : obj ? obj[lang] || obj.en : "");
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
@@ -49,7 +49,8 @@
     const bookId = params.get("book"), pageId = params.get("page");
     const b = F.books[bookId];
     const p = b && b.pages[pageId];
-    lang = params.get("lang") || store.get("ms-lang") || (b && b.lang) || F.site.default_lang;
+    // the site-wide language (switch at the top right); see shelf/lang-head.html
+    lang = window.msLang ? window.msLang() : (params.get("lang") || F.site.default_lang);
     if (!F.site.langs.includes(lang)) lang = F.site.default_lang;
     if (!b || !p || !p.templates.length) {
       app.replaceChildren(el("div", { class: "notice" },
@@ -61,32 +62,36 @@
     const wanted = params.get("tpl");
     tplId = page.templates.includes(wanted) ? wanted : page.templates[0];
     const s = params.get("seg");
-    seg = page.segments.some((x) => x.id === s) ? s : "";
+    seg = segs().some((x) => x.id === s) ? s : "";
+    document.addEventListener("ms:lang", (e) => {
+      saveDraft();
+      const before = segs().findIndex((x) => x.id === seg);
+      lang = e.detail;
+      // the same section has a different anchor in each language: keep its position
+      seg = before >= 0 && segs()[before] ? segs()[before].id : "";
+      render();
+    });
     render();
   }
+
+  const segs = () => (Array.isArray(page.segments) ? page.segments : (page.segments[lang] || []));
+  const backHref = () => `${book.id}/${lang}/${page.id}.html${seg ? "#" + seg : ""}`;
 
   // ---------- render ----------
   function render() {
     document.documentElement.lang = lang;
     const tpl = template();
-    const back = `${book.id}/${page.id}.html${seg ? "#" + seg : ""}`;
-
-    const langSwitch = el("div", { class: "lang", role: "group", "aria-label": t("language") },
-      F.site.langs.map((l) => el("button", {
-        type: "button", class: l === lang ? "on" : "", "aria-pressed": String(l === lang),
-        text: l.toUpperCase(),
-        onclick: () => { saveDraft(); lang = l; store.set("ms-lang", l); render(); },
-      })));
+    const back = backHref();
 
     const segSelect = el("select", { id: "f-seg", onchange: (e) => { seg = e.target.value; } },
       el("option", { value: "", text: t("whole_page") }),
-      page.segments.map((s) => el("option", { value: s.id, text: s.title, selected: s.id === seg })));
+      segs().map((s) => el("option", { value: s.id, text: s.title, selected: s.id === seg })));
 
     const head = el("header", { class: "form-head" },
       el("div", { class: "form-head-top" },
-        el("a", { class: "back", href: back, text: "← " + t("sent_back") }), langSwitch),
-      el("p", { class: "kicker", text: `${t("contribute_to")} · ${book.title}` }),
-      el("h1", { text: page.title }),
+        el("a", { class: "back", href: back, text: "← " + t("sent_back") })),
+      el("p", { class: "kicker", text: `${t("contribute_to")} · ${tx(book.title)}` }),
+      el("h1", { text: tx(page.title) }),
       el("div", { class: "where" },
         el("label", { for: "f-seg", text: t("segment") }), segSelect));
 
@@ -304,7 +309,7 @@
   }
 
   function done(ref) {
-    const back = `${book.id}/${page.id}.html${seg ? "#" + seg : ""}`;
+    const back = backHref();
     app.replaceChildren(el("div", { class: "notice sent", tabindex: "-1" },
       el("h1", { text: t("sent_title") }),
       el("p", {}, t("sent_body") + " ", el("strong", { text: "#" + ref })),

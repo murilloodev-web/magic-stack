@@ -7,7 +7,7 @@
 
 return {
   title    = "Magic Stack",
-  tagline  = "A shelf of tabletop RPG stories you can read, play and add to.",
+  tagline  = "Uma estante de histórias de RPG de mesa para ler, jogar e continuar.",
   owner    = "Murillo França M. da Silva",
   base_url = "https://murilloodev-web.github.io/magic-stack/",
   repo_url = "https://github.com/murilloodev-web/magic-stack",
@@ -23,6 +23,7 @@ return {
   -- data requests (LGPD). Fill in before opening contributions.
   contact = "",
 
-  default_lang = "en",
-  langs = { "en", "pt" },
+  default_lang = "pt",
+  langs = { "pt", "en" },   -- every book and page is built in these languages; the switch shows them in this order
+  tagline_en = "A shelf of tabletop RPG stories you can read, play and add to.",
 }

@@ -23,7 +23,7 @@ a:hover { color: var(--lamp); }
 .skip:focus { left: 16px; top: 8px; background: var(--panel); padding: .4em .8em; z-index: 10; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
-.topbar { display: flex; align-items: center; padding: .65rem 16px; border-bottom: var(--px) solid var(--rule);
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: .65rem 16px; border-bottom: var(--px) solid var(--rule);
   background: rgb(11 11 20 / .92); position: sticky; top: 0; z-index: 5; }
 .brand { font: 400 1.5rem/1 var(--display); color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: .55rem; }
 .sigil { width: 12px; height: 12px; background: var(--accent); box-shadow: 0 0 0 3px #6f45b0, 0 0 14px var(--accent); transform: rotate(45deg); }

@@ -303,3 +303,19 @@ h2:hover .contrib-seg, .contrib-seg:focus-visible { opacity: 1; }
   border-left: var(--px) solid var(--lamp); }
 .contrib h2 { margin-top: 0; }
 .contrib p { color: var(--ink-soft); margin: .2rem 0 1rem; }
+
+/* ---- language switch (always visible, top right) ---- */
+.topbar-right { display: flex; align-items: center; gap: .6rem; flex: none; }
+.lang-switch { display: flex; gap: 3px; }
+.lang-switch a { font: 700 .68rem/1 var(--pixel); letter-spacing: .06em; text-decoration: none; color: var(--ink-soft);
+  background: var(--panel-2); padding: .55em .7em; }
+.lang-switch a:hover { color: var(--lamp); }
+.lang-switch a[aria-current] { background: var(--lamp); color: #0b0b14; }
+.topbar-left { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 520px) {
+  .brand { display: block; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .brand .sigil { display: none; }
+  .shelf-link { margin-right: .5rem; }
+  .topbar-right { gap: .4rem; }
+  .menu { padding: .6em .7em; }
+}

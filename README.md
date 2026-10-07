@@ -4,7 +4,7 @@
 
 **Read it online:** https://murilloodev-web.github.io/magic-stack/
 
-Each book is a playable story, written as plain Lua data and built into a static website. Every page of every book has a **Contribute** button: readers send characters, places, scenes, endings or corrections through a form, without needing GitHub, and each contribution waits in a private queue for the author's review.
+Each book is a playable story, written as plain Lua data and built into a static website. The whole site is bilingual (Português and English), with a language switch always at the top right; every book is built once per language, in `docs/<book>/pt/` and `docs/<book>/en/`. Every page of every book has a **Contribute** button: readers send characters, places, scenes, endings or corrections through a form, without needing GitHub, and each contribution waits in a private queue for the author's review.
 
 ## On the shelf
 
@@ -16,12 +16,14 @@ Each book is a playable story, written as plain Lua data and built into a static
 
 ```
 library.lua                 the shelf: which books, in which order
-site.lua                    site settings (Worker address, Turnstile key, terms version)
+site.lua                    site settings (languages, Worker address, Turnstile key, terms version)
+lib/book_strings.lua        book page interface text in every language
 books/<id>/
   book.lua                  title, system, spine and cover, and which form each page offers
   cover.html                optional hand-made cover for the table
   build.lua                 the book's own validator and site generator
-  data/                     the story, as Lua data
+  data/                     the story, as Lua data, in the book's original language
+  data/<lang>/              the translation; the build fails if any page, sheet, scene or note is missing
   REFERENCE.md              the whole book as one Markdown file (generated)
 shelf/
   shelf.html, shelf.css      the shelf-and-table home page (from the Claude Design "Estante e Mesa")
