@@ -246,3 +246,6 @@ a:hover { color: #dfe7d9; }
   font: 700 15px/1.3 'Silkscreen', monospace; color: #fbe598; text-align: center; padding: 8px 12px; background: #0b0b14;
   box-shadow: 0 0 0 4px #b8433e; text-shadow: 2px 2px 0 #7a2f45; }
 @media (prefers-reduced-motion: reduce) { .ms-egg.is-on { animation: none; } }
+
+/* desktop: no hint under the table (the note on the wall already says it) */
+@media (min-width: 600px) { .ms-hint-text, .ms-hint-keys { display: none; } }
