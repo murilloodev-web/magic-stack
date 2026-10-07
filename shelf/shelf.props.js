@@ -150,6 +150,11 @@ function propArt(k) {
   const frag = document.createDocumentFragment();
   const shadow = document.createElement('span');
   shadow.className = 'ms-prop-shadow';
+  if (k === 'Candle') {   // a small warm halo, much smaller than the lamp's light
+    const glow = document.createElement('span');
+    glow.className = 'ms-cglow';
+    frag.append(glow);
+  }
   frag.append(shadow, spriteCanvas(SPRITES[k]));
   const fl = FLAMES[k];
   if (fl) {

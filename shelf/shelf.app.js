@@ -315,11 +315,13 @@ function renderProps() {
       el.style.width = d.w + 'px'; el.style.height = d.h + 'px';
       el.append(propArt(d.k));
       el.addEventListener('pointerdown', (e) => propDown(e, d.id));
-      E.props.append(el);
       propEls[d.id] = el;
     }
     const dr = S.pdrag && S.pdrag.id === d.id;
     const box = dr ? S.pdrag : propBox(d);
+    const onShelf = !dr && (S.propPos[d.id] || d.def).surf === 'shelf';
+    const host = onShelf ? propsShelf : E.props;
+    if (el.parentNode !== host) host.append(el);
     if (!box) { el.hidden = true; return; }
     el.hidden = false;
     el.title = d.id === 'lamp' ? u().lampTip : u().propTip;
@@ -346,17 +348,31 @@ function shadeProps() {
   }
 }
 
-// Easter egg: the lamp inside the circle lights a tall blaze (shelf.blaze.js).
-const blaze = makeBlaze(E.table);
+// Objects on the shelf sit in a layer behind the table, so the fire on the
+// table is drawn in front of them; they stay clickable.
+const propsShelf = document.createElement('div');
+propsShelf.className = 'ms-props ms-props-shelf';
+propsShelf.setAttribute('aria-hidden', 'true');
+E.table.before(propsShelf);
+
+// Easter eggs (shelf.blaze.js): the lamp inside the circle lights a tall
+// blaze; the candle inside it lights a tiny one. Back flames are drawn in the
+// table (behind the book), front flames over the table objects.
+const blaze = makeBlaze(E.table, E.props);
+const candleBlaze = makeBlaze(E.table, E.props, { scale: 0.22 });
 let blazeBox = null;
-function checkBlaze() {
-  const lamp = propEls.lamp;
-  if (!lamp || lamp.hidden || !blazeBox || !S.lay || !S.lay.table) { blaze.set(false, isReduced()); return; }
+function inCircle(el) {
+  if (!el || el.hidden || !blazeBox || !S.lay || !S.lay.table) return false;
   const t = S.lay.table;
-  const bx = lamp.offsetLeft + lamp.offsetWidth / 2 - t.x, by = lamp.offsetTop + lamp.offsetHeight - 8 - t.y;
-  const inside = ((bx - blazeBox.cx) / blazeBox.rx) ** 2 + ((by - blazeBox.cy) / blazeBox.ry) ** 2 <= 1.15;
-  if (inside && !blaze.on) announce(lang() === 'pt' ? 'O círculo pega fogo.' : 'The circle bursts into flame.');
-  blaze.set(inside, isReduced());
+  const bx = el.offsetLeft + el.offsetWidth / 2 - t.x, by = el.offsetTop + el.offsetHeight - 8 - t.y;
+  return ((bx - blazeBox.cx) / blazeBox.rx) ** 2 + ((by - blazeBox.cy) / blazeBox.ry) ** 2 <= 1.15;
+}
+function checkBlaze() {
+  const lamp = inCircle(propEls.lamp), candle = !lamp && inCircle(propEls.candle);
+  if (lamp && !blaze.on) announce(lang() === 'pt' ? 'O círculo pega fogo.' : 'The circle bursts into flame.');
+  if (candle && !candleBlaze.on) announce(lang() === 'pt' ? 'Uma chaminha acende no círculo.' : 'A tiny flame lights up in the circle.');
+  blaze.set(lamp, isReduced());
+  candleBlaze.set(candle, isReduced());
 }
 
 function renderBeams() {
@@ -366,7 +382,9 @@ function renderBeams() {
   const mob = isMobile();
   const zx = lay.zone.x - lay.table.x + lay.zone.w / 2, zy = lay.zone.y - lay.table.y + lay.zone.h * 0.62, rx = mob ? 116 : 184, ry = mob ? 52 : 88;
   blazeBox = { cx: zx, cy: zy, rx, ry, height: mob ? 380 : 560 };
-  blaze.layout(blazeBox);
+  const origin = { front: { x: lay.table.x, y: lay.table.y } };
+  blaze.layout(blazeBox, origin);
+  candleBlaze.layout(blazeBox, origin);
   if (!S.pdrag) setTimeout(checkBlaze, 0);
   Object.assign(E.glowbox.style, { left: (zx - rx * 1.25) + 'px', top: (zy - ry * 1.25) + 'px', width: (rx * 2.5) + 'px', height: (ry * 2.5) + 'px' });
   for (let i = 0; i < 22; i++) {
@@ -382,9 +400,15 @@ function renderBeams() {
   updateCircle();
 }
 
-let candleAnim = null;
+let candleAnim = null, glowAnim = null;
 function ambient() {
-  const cflame = E.props.querySelector('.ms-cflame');
+  const glow = E.root.querySelector('.ms-cglow');
+  if (glow && !(glowAnim && glowAnim.effect && glowAnim.effect.target === glow) && !isReduced()) {
+    if (glowAnim) glowAnim.cancel();
+    glowAnim = glow.animate([{ opacity: 1 }, { opacity: 0.75 }, { opacity: 0.95 }, { opacity: 0.8 }, { opacity: 1 }],
+      { duration: 1400, iterations: Infinity, easing: 'steps(4)' });
+  }
+  const cflame = E.root.querySelector('.ms-cflame');
   if (cflame && !(candleAnim && candleAnim.effect && candleAnim.effect.target === cflame) && !isReduced()) {
     if (candleAnim) candleAnim.cancel();
     candleAnim = cflame.animate([
@@ -584,6 +608,7 @@ function propMove(e) {
     if (Math.hypot(e.clientX - p.sx, e.clientY - p.sy) < 4) return;
     p.active = true;
     if (p.id === 'lamp') blaze.set(false, isReduced());
+    if (p.id === 'candle') candleBlaze.set(false, isReduced());
   }
   const rr = E.root.getBoundingClientRect();
   let lampBook = null;

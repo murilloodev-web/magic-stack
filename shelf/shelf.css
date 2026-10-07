@@ -151,7 +151,16 @@ a:hover { color: #dfe7d9; }
 .ms-prop span, .ms-prop div { position: absolute; }
 .ms-prop canvas.ms-sprite { position: absolute; left: 0; top: 0; image-rendering: pixelated; image-rendering: crisp-edges; }
 .ms-blaze { position: absolute; z-index: 1; pointer-events: none; image-rendering: pixelated; image-rendering: crisp-edges;
-  filter: drop-shadow(0 0 10px rgba(226, 122, 63, .55)); }
+  filter: drop-shadow(0 0 10px rgba(226, 122, 63, .5)); }
+.ms-blaze-front { z-index: 30; }
+/* shelf objects: behind the table (and its fire), above the wall */
+.ms-props-shelf { z-index: 2; }
+/* the candle's small light: hard-edged pixel bands, like the lamp's glow */
+.ms-cglow { left: -48px; top: -46px; width: 116px; height: 116px; pointer-events: none; mix-blend-mode: screen;
+  background:
+    repeating-conic-gradient(rgba(243,176,74,.10) 0 25%, transparent 0 50%) 0 0/4px 4px,
+    radial-gradient(closest-side, rgba(251,229,152,.30) 0 18%, rgba(243,176,74,.18) 18% 42%, rgba(226,122,63,.08) 42% 70%, transparent 70%);
+  -webkit-mask-image: radial-gradient(closest-side, #000 0 70%, transparent 70%); mask-image: radial-gradient(closest-side, #000 0 70%, transparent 70%); }
 .ms-prop-shadow { left: 8%; right: 8%; bottom: -3px; height: 6px; background: rgba(11,11,20,.45); }
 
 /* lamp-over-a-spine summary */
