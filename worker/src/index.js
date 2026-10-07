@@ -200,7 +200,7 @@ function headline(v) {
 
 export function buildIssue(v, siteUrl, now) {
   const { book, page, segment, tpl, fields, contributor, consent, lang } = v;
-  const pageUrl = `${siteUrl}${book.id}/${lang}/${page.id}.html${segment ? "#" + segment.id : ""}`;
+  const pageUrl = `${siteUrl}${book.id}/${lang}/${page.file || page.id + ".html"}#${segment ? segment.id : page.id}`;
   const bookTitle = tx(book.title, "pt"), pageTitle = tx(page.title, "pt");
   const isIdea = book.id === "_new";
   const title = (isIdea
@@ -341,8 +341,8 @@ export function luaDraft(v, now) {
 
   if (d.shape === "page") {
     const kind = d.kind ? f[d.kind] || "fiction" : "fiction";
-    lines.push(`-- new entry for data/pages.lua (section "${page.section}")`, credit, "{");
-    lines.push(`  id = ${luaQ(slug(f[d.title]))}, section = ${luaQ(page.section)}, kind = ${luaQ(kind)},`);
+    lines.push(`-- new entry for data/pages.lua; add its id to chapter "${page.section}" in data/chapters.lua`, credit, "{");
+    lines.push(`  id = ${luaQ(slug(f[d.title]))}, kind = ${luaQ(kind)},`);
     lines.push(`  title = ${luaQ(f[d.title])},`);
     lines.push(`  summary = ${luaQ(f[d.summary] || "")},`);
     lines.push(`  body = ${luaLong(bodyBlocks(v, d.body))},`);
@@ -386,12 +386,19 @@ export function luaDraft(v, now) {
     lines.push(`  text = ${luaQ(f[d.text])} },`);
   } else if (d.shape === "scene") {
     lines.push("-- new node for data/flow.lua; also add an exit to it from the scenes it comes from", credit);
-    lines.push("{ id = " + luaQ(slug(f[d.title])) + ", title = " + luaQ(f[d.title]) + `, page = ${luaQ(page.id === "scenario-flow" ? "TODO" : page.id)},`);
+    lines.push("{ id = " + luaQ(slug(f[d.title])) + ", title = " + luaQ(f[d.title]) + `, page = ${luaQ("scene-" + slug(f[d.title]))}, -- also write that article in data/pages.lua and add it to chapter "investigation"`);
     lines.push(`  text = ${luaQ(f[d.text])},`);
     lines.push("  next = {");
     lines.push(comment(`exits, as sent:\n${f[d.exits]}`).replace(/^/gm, "    "));
     lines.push("  } },");
     lines.push(comment(`comes from, as sent:\n${f[d.from]}`));
+    for (const id of d.body || []) if (f[id]) lines.push(comment(`${id}: ${f[id]}`));
+  } else if (d.shape === "handout") {
+    lines.push("-- new entry for data/handouts.lua (it is numbered by its place in the list)", credit, "{");
+    lines.push(`  id = ${luaQ("h-" + slug(f[d.title]))}, style = ${luaQ(f[d.style] || "letter")}, found = "TODO", -- ${String(f[d.found]).replace(/\n/g, " ")}`);
+    lines.push(`  title = ${luaQ(f[d.title])},`);
+    lines.push(`  text = ${luaLong(f[d.text])},`);
+    lines.push("},");
     for (const id of d.body || []) if (f[id]) lines.push(comment(`${id}: ${f[id]}`));
   } else if (d.shape === "source") {
     lines.push("-- new entry for data/sources.lua (the build fails until a page cites it)", credit, "{");

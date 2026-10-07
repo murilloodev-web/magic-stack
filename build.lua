@@ -63,7 +63,7 @@ end
 ---------------------------------------------------------------------------
 local FIELD_TYPES = { text = true, textarea = true, select = true, number = true, url = true }
 local DEFAULT_MAX = { text = 140, url = 500, textarea = 4000 }
-local SHAPES = { page = true, segment = true, investigator = true, timeline = true, scene = true, source = true, book = true }
+local SHAPES = { page = true, segment = true, investigator = true, timeline = true, scene = true, source = true, handout = true, book = true }
 local IDEA_TEMPLATE = "book-idea"   -- the "new book idea" form opened from propor-livro.html
 
 local function check_text(t, where)
@@ -104,7 +104,7 @@ local function prepare_templates(list, where)
     end
     if fids.notes then fail("%s: 'notes' is added automatically, do not declare it", w) end
     local d = t.draft
-    if not d or not SHAPES[d.shape] then fail("%s: draft.shape must be one of page/segment/investigator/timeline/scene/source", w)
+    if not d or not SHAPES[d.shape] then fail("%s: draft.shape must be one of page/segment/investigator/timeline/scene/source/handout", w)
     else
       for key, ref in pairs(d) do
         if key ~= "shape" then
@@ -157,7 +157,7 @@ for _, book in ipairs(books) do
       end
       pages[p.id] = {
         title = per_lang(function(l) return ms[l].pages[i].title end),
-        section = p.section, kind = p.kind,
+        section = p.section, file = p.file, kind = p.kind,
         templates = #p.templates > 0 and p.templates or json.array(),
         segments = per_lang(function(l) local sg = ms[l].pages[i].segments; return #sg > 0 and sg or json.array() end),
       }
@@ -167,7 +167,8 @@ for _, book in ipairs(books) do
     books_json[book.id] = {
       title = per_lang(function(l) return ms[l].title end), system = book.system, author = book.author,
       lang = book.lang, open = book.open_contributions and true or false,
-      pages = pages, sections = m.sections, order = page_order,   -- reading order (JSON objects are sorted by key)
+      pages = pages, sections = m.sections, order = page_order,
+      section_names = per_lang(function(l) return ms[l].section_names end),   -- reading order (JSON objects are sorted by key)
       templates = next(own) and own or nil,   -- book-specific templates override shared ones
     }
   end

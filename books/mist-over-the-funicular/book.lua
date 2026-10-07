@@ -41,25 +41,29 @@ return {
   contrib_page = "synopsis", -- where "Contribuir" on the table card leads
   open_contributions = true,
 
-  -- Which forms the "Contribute" buttons open. A page gets the templates of
-  -- its section unless `pages` overrides it; `false` means no contributions.
-  -- When a page offers more than one template the reader picks one.
+  -- Which forms the "Contribute" buttons open. An article gets the templates
+  -- of its chapter (data/chapters.lua) unless `pages` overrides it; `false`
+  -- means no contributions. With more than one template the reader picks one.
   contrib = {
-    sections = {
-      ["The Scenario"]  = { "idea" },
-      ["Places"]        = { "place", "npc" },
-      ["The Mythos"]    = { "mythos", "npc" },
-      ["Factions"]      = { "faction", "npc" },
-      ["Investigators"] = { "investigator" },
-      ["Endings"]       = { "ending" },
-      ["Reference"]     = { "source" },
+    chapters = {
+      intro         = { "idea" },
+      setting       = { "place", "npc" },
+      mythos        = { "mythos", "npc" },
+      investigators = { "investigator" },
+      investigation = { "scene", "npc", "handout" },
+      npcs          = { "npc", "faction" },
+      endings       = { "ending" },
+      appendix      = { "source" },
     },
     pages = {
-      ["timeline"]      = { "timeline-event" },
-      ["scenario-flow"] = { "scene" },
-      ["mist-contact"]  = { "rule" },
-      ["the-fugitive"]  = { "npc", "mythos" },
-      ["about"]         = false,
+      ["timeline"]           = { "timeline-event" },
+      ["scenario-flow"]      = { "scene" },
+      ["running"]            = { "rule", "idea" },
+      ["mist-contact"]       = { "rule" },
+      ["the-fugitive"]       = { "npc", "mythos" },
+      ["company-of-shadows"] = { "faction", "npc" },
+      ["handouts"]           = { "handout" },
+      ["about"]              = false,
     },
   },
 }

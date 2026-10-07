@@ -63,14 +63,14 @@ test("a valid submission opens one issue and returns its number", async () => {
   assert.equal(gh.init.headers.authorization, "Bearer test-token");
   const issue = JSON.parse(gh.init.body);
   assert.match(issue.title, /^\[A Névoa sobre o Funicular\] Final A — De Volta ao Mar — Final: uma variação ou um novo: The Long Tide/);
-  assert.match(issue.body, /mist-over-the-funicular\/pt\/ending-sea\.html/);
+  assert.match(issue.body, /mist-over-the-funicular\/pt\/endings\.html#ending-sea/);
   assert.deepEqual(issue.labels, ["contribuição", "aguardando-revisão", "livro:mist-over-the-funicular", "tipo:ending"]);
   assert.match(issue.body, /Pseudônimo: \*\*Maré\*\*/);
   assert.match(issue.body, /ana@example\.com/);               // email normalised
   assert.match(issue.body, /@​someone/);                  // mentions neutralised
   assert.match(issue.body, /#​12/);                       // issue refs neutralised
-  assert.match(issue.body, /```lua\n-- new entry for data\/pages\.lua \(section "Endings"\)/);
-  assert.match(issue.body, /id = "the-long-tide", section = "Endings", kind = "fiction"/);
+  assert.match(issue.body, /```lua\n-- new entry for data\/pages\.lua; add its id to chapter "endings"/);
+  assert.match(issue.body, /id = "the-long-tide", kind = "fiction"/);
   assert.match(issue.body, /Termo de Contribuição \*\*v1\.0\*\*/);
   assert.match(issue.body, /<!-- magic-stack-submission \{.*"accepted_at"/);
 });

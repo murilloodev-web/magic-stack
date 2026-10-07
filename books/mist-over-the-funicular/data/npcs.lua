@@ -1,0 +1,75 @@
+-- Keeper characters with game statistics (Call of Cthulhu 7th Edition).
+-- A page shows a profile with a line "@npc:<id>". build.lua recomputes HP,
+-- MP, Move (with the age penalty), Damage Bonus and Build from the
+-- characteristics and stops the build if `declared` disagrees.
+
+return {
+  {
+    id = "ashworth",
+    name = "Henrique Ashworth",
+    label = "Chief engineer and Grand Master of the Company, 58",
+    age = 58,
+    characteristics = { STR = 45, CON = 50, SIZ = 65, DEX = 45, APP = 60, INT = 80, POW = 75, EDU = 85 },
+    declared = { HP = 11, MP = 15, Move = 5, DB = "0", Build = 0 },
+    sanity = 30, contact = 8,
+    attacks = {
+      { "Fighting (Brawl)", 30, "1D3 + DB" },
+      { "Firearms (Handgun) — .32 revolver", 40, "1D8" },
+    },
+    dodge = 22,
+    skills = {
+      { "Credit Rating", 60 }, { "Science (Engineering)", 70 }, { "Persuade", 65 }, { "Psychology", 55 },
+      { "Spot Hidden", 50 }, { "Occult", 40 }, { "Cthulhu Mythos", 18 },
+    },
+    armor = "None.",
+    spells = "**Call the Fog** (4 MP, 1D4 SAN to the caster): the mist thickens around one person in sight; they make an immediate Contact roll with a penalty die.",
+    notes = "Sucks salt pastilles all day. Speaks the Company's silent hand-signs. At Contact 8 the creature asks him something once per scene; he resists with an opposed POW roll, and loses more often each night.",
+  },
+  {
+    id = "cultist",
+    name = "Company cultist",
+    label = "Foreman, clerk or brakeman by day; typical profile",
+    characteristics = { STR = 55, CON = 60, SIZ = 60, DEX = 55, APP = 50, INT = 55, POW = 50, EDU = 50 },
+    declared = { HP = 12, MP = 10, Move = 7, DB = "0", Build = 0 },
+    sanity = 25, contact = "5–7",
+    attacks = {
+      { "Fighting (Brawl)", 45, "1D3 + DB" },
+      { "Fighting (Brawl) — crowbar or rail spike", 45, "1D8 + DB" },
+    },
+    dodge = 27,
+    skills = { { "Climb", 50 }, { "Listen", 55 }, { "Stealth", 50 }, { "Mechanical Repair", 45 }, { "Intimidate", 40 } },
+    armor = "None.",
+    notes = "They carry salt in their pockets and a flask of brine. In the mist they fight in silence, coordinating with hand-signs; two or more together get a bonus die to surround or grapple.",
+  },
+  {
+    id = "tonico",
+    name = "Antônio “Tonico” Castro",
+    label = "Lenita's younger brother, tank-car cleaner, 19",
+    age = 19,
+    characteristics = { STR = 60, CON = 45, SIZ = 55, DEX = 65, APP = 55, INT = 50, POW = 70, EDU = 45 },
+    declared = { HP = 10, MP = 14, Move = 9, DB = "0", Build = 0 },
+    sanity = 12, contact = 9,
+    attacks = {
+      { "Fighting (Brawl)", 50, "1D3 + DB" },
+      { "The drowning embrace (grapple)", 50, "seawater wells from his mouth into the victim's: CON roll or 1D3 damage per round" },
+    },
+    dodge = 32,
+    skills = { { "Climb", 60 }, { "Listen", 70 }, { "Stealth", 55 }, { "Swim", 50 } },
+    armor = "None.",
+    notes = "A **Brine-speaker**: when the mist is thick the creature talks through him, in his voice, and it knows everything he knows about his sister. He cannot be brought below Contact 9 while the Seed is on the mountain. If it reaches the sea (Ending A), his Contact falls to 4 and he can be brought home.",
+  },
+  {
+    id = "ditinho",
+    name = "Benedito “Seu Ditinho” Ramos",
+    label = "Retired locobreque driver, 78",
+    age = 78,
+    characteristics = { STR = 35, CON = 45, SIZ = 50, DEX = 40, APP = 45, INT = 70, POW = 65, EDU = 40 },
+    declared = { HP = 9, MP = 13, Move = 3, DB = "0", Build = 0 },
+    sanity = 55, contact = 2,
+    attacks = { { "Fighting (Brawl)", 25, "1D3 + DB" } },
+    dodge = 20,
+    skills = { { "Operate Heavy Machinery (Locobreque)", 80 }, { "Mechanical Repair", 70 }, { "Listen", 60 }, { "History (Railway)", 50 } },
+    armor = "None.",
+    notes = "Keeps his Contact low with salt and stubbornness. Knows how to raise steam in a locobreque, which matters in [[ending-sea]].",
+  },
+}

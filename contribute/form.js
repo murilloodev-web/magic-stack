@@ -81,7 +81,7 @@
   }
 
   const segs = () => (Array.isArray(page.segments) ? page.segments : (page.segments[lang] || []));
-  const backHref = () => (IDEA ? "propor-livro.html" : `${book.id}/${lang}/${page.id}.html${seg ? "#" + seg : ""}`);
+  const backHref = () => (IDEA ? "propor-livro.html" : `${book.id}/${lang}/${page.file || page.id + ".html"}#${seg || page.id}`);
 
   // ---------- render ----------
   function render() {

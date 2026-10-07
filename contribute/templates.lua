@@ -18,6 +18,7 @@
 --   shape = "timeline"     new entry for data/timeline.lua
 --   shape = "scene"        new node for data/flow.lua
 --   shape = "source"       new entry for data/sources.lua
+--   shape = "handout"      new entry for data/handouts.lua
 --   shape = "book"         a starting book.lua and page outline for a brand-new book (book-idea)
 -- Every field named in `draft` must exist; build.lua checks it.
 --
@@ -273,6 +274,31 @@ return {
       { id = "clues", type = "textarea", max = 1500, label = L("Clues found here", "Pistas encontradas aqui") },
     },
     draft = { shape = "scene", title = "title", text = "what", from = "from", exits = "exits", body = { "where", "clues" } },
+  },
+
+  {
+    id = "handout",
+    title = L("Player handout", "Handout para os jogadores"),
+    intro = L("A document the investigators can find and hold: a letter, a telegram, a page of a diary, a newspaper clipping. Write it exactly as they would read it.",
+              "Um documento que os investigadores podem encontrar e segurar: uma carta, um telegrama, uma página de diário, um recorte de jornal. Escreva exatamente como eles leriam."),
+    fields = {
+      { id = "title", type = "text", required = true, max = 80, label = L("Title", "Título") },
+      { id = "style", type = "select", required = true, label = L("What kind of document", "Que tipo de documento"),
+        options = {
+          { "letter",   en = "Letter", pt = "Carta" },
+          { "telegram", en = "Telegram or log", pt = "Telegrama ou registro" },
+          { "memo",     en = "Official memo", pt = "Memorando oficial" },
+          { "notebook", en = "Diary or notebook", pt = "Diário ou caderno" },
+          { "register", en = "Ledger or register", pt = "Livro de registro" },
+          { "photo",    en = "Photograph (described)", pt = "Fotografia (descrita)" },
+        } },
+      { id = "found", type = "text", required = true, max = 160,
+        label = L("Where the investigators find it", "Onde os investigadores encontram") },
+      { id = "text", type = "textarea", required = true, max = 3000, label = L("The document's text", "O texto do documento") },
+      { id = "reveals", type = "textarea", required = true, max = 1200,
+        label = L("What it reveals (for the Keeper)", "O que ele revela (para o Guardião)") },
+    },
+    draft = { shape = "handout", title = "title", style = "style", found = "found", text = "text", body = { "reveals" } },
   },
 
   {

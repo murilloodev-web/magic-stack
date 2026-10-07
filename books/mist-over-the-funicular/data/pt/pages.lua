@@ -164,7 +164,7 @@ Ela quer voltar para o mar, como quase voltou em 1866 (veja [[the-fugitive]]). T
 - **Julho:** tóxica e implacável. Testes de Contato a cada hora ao ar livre depois do entardecer, e a exposição custa 1D2 PV por hora.
 
 ## Usando na mesa
-Trate a névoa como um relógio e como uma tentação. A cada cena desperdiçada ela engrossa; cada respiração funda dá uma pista verdadeira, por um preço. Descreva a névoa se fechando em vez de anunciar regras.
+Trate a névoa como um relógio e como uma tentação. A cada cena desperdiçada ela engrossa (veja o Relógio da Névoa em [[running]]); cada respiração funda dá uma pista verdadeira, por um preço. Descreva a névoa se fechando em vez de anunciar regras.
 ]==],
   },
   ["mist-contact"] = {
@@ -314,7 +314,7 @@ Todo membro da Companhia respira a névoa de propósito, e todos estão em [[mis
 Todo inverno desde 1868, a Companhia esconde seu rito dentro de uma celebração particular da vila, que o público só descobriu em 2001: veja [[winter-festival]].
 
 ## Em 1974
-A ordem está assustada e dividida. Sem os vagões-tanque, a névoa fica mais alta na cabeça deles a cada noite. Alguns querem arrastar a criatura até a nova linha de cremalheira; outros planejam um sacrifício grande o bastante para ganhar tempo. Todos querem ver os auditores da RFFSA longe dali. Eles são liderados pelo [[chief-engineer|engenheiro-chefe]].
+A ordem está assustada e dividida. Sem os vagões-tanque, a névoa fica mais alta na cabeça deles a cada noite. Alguns querem arrastar a criatura até a nova linha de cremalheira; outros planejam um sacrifício grande o bastante para ganhar tempo. Todos querem ver os auditores da RFFSA longe dali. Eles são liderados pelo [[chief-engineer|engenheiro-chefe]]. Os membros ativos estão em [[cultists]].
 ]==],
   },
   ["chief-engineer"] = {
@@ -323,10 +323,12 @@ A ordem está assustada e dividida. Sem os vagões-tanque, a névoa fica mais al
     body = [==[
 Quem ocupa o cargo de engenheiro-chefe e mora no [[castelinho|Castelinho]] é, por direito ritual, Grão-Mestre da [[company-of-shadows|Companhia das Sombras]]. Todos os nomeados desde o século 19 foram recrutados, de um jeito ou de outro. O cargo passa adiante quando um engenheiro-chefe enfim "se afoga".
 
-O atual engenheiro-chefe usa os telégrafos e os livros de registro da ferrovia para organizar sacrifícios e esconder o enorme consumo de água do mar e de ferro. É cortês, cansado e tem muito medo. Está em [[mist-contact|Contato]] 8, chupa pastilhas de sal o tempo todo e ouve a criatura a cada minuto acordado. Sabe melhor do que ninguém o que acontece quando a água acaba.
+O atual engenheiro-chefe, **Henrique Ashworth**, nasceu em São Paulo numa família que veio com a São Paulo Railway, e ocupa o cargo desde 1958. Ele usa os telégrafos e os livros de registro da ferrovia para organizar sacrifícios e esconder o enorme consumo de água do mar e de ferro. É cortês, cansado e tem muito medo. Está em [[mist-contact|Contato]] 8, chupa pastilhas de sal o tempo todo e ouve a criatura a cada minuto acordado. Sabe melhor do que ninguém o que acontece quando a água acaba.
 
 ## Como interpretá-lo
-No começo, ele não quer os investigadores mortos. Quer que eles *entendam*, e depois ajudem. Ofereça a eles um acordo antes de oferecer uma faca. Se um investigador estiver Tocado pela Maré, ele vai falar com ele nos sinais silenciosos do culto, e o investigador vai entender.
+No começo, ele não quer os investigadores mortos. Quer que eles *entendam*, e depois ajudem. Ofereça a eles um acordo antes de oferecer uma faca. Se um investigador estiver Tocado pela Maré, ele vai falar com ele nos sinais silenciosos do culto, e o investigador vai entender. O jantar e o acordo dele estão em [[scene-castelinho]].
+
+@npc:ashworth
 ]==],
   },
 
@@ -359,36 +361,377 @@ No começo, ele não quer os investigadores mortos. Quer que eles *entendam*, e 
     body = [==[
 *Final opcional, para mesas que gostam de riscos de verdade.*
 
-Se os investigadores desperdiçarem cenas demais, a névoa chega ao estágio de julho antes que eles cheguem à [[grota-funda]]. A criatura não desperta; ela simplesmente *se espalha*. O culto é encontrado afogado num túnel seco. Os investigadores acordam em Santos sem lembrança da última semana, e com um gosto de sal que não passa.
+Se o [[running|Relógio da Névoa]] encher antes de os investigadores chegarem à [[grota-funda]], a névoa vence. A criatura não desperta; ela simplesmente *se espalha*. O culto é encontrado afogado num túnel seco. Os investigadores acordam em Santos sem lembrança da última semana, e com um gosto de sal que não passa.
 
 O mesmo final vale para qualquer investigador que chegue a [[mist-contact|Contato]] 10: ele simplesmente não está lá quando os outros acordam.
 
-Este final existe para que o [[the-mist|relógio da névoa]] de fato importe.
+Este final existe para que o [[running|Relógio da Névoa]] de fato importe.
 ]==],
   },
 
   ---------------------------------------------------------------- REFERÊNCIA
   ["sources"] = {
     title = "Fontes",
-    summary = "Todas as referências do mundo real citadas neste grimório.",
+    summary = "Todas as referências do mundo real citadas neste livro.",
   },
   ["about"] = {
-    title = "Sobre este Grimório",
+    title = "Sobre este Livro",
     summary = "Quem escreveu, como foi construído e como usar.",
     body = [==[
 *A Névoa sobre o Funicular* é um cenário de investigação original para [[sources|Call of Cthulhu 7ª Edição]] {{coc7}}, escrito por **Murillo França M. da Silva**, mestre de jogo há mais de dez anos (D&D, Tormenta e outros).
 
 ## Como foi construído
-O grimório inteiro é feito de dados simples em **Lua**: páginas, investigadores, fontes, uma linha do tempo e um grafo do cenário. Um pequeno script de build em Lua transforma tudo isso neste site. Na hora do build, o script:
+O livro inteiro é feito de dados simples em **Lua**: capítulos, artigos, investigadores, personagens do Guardião, handouts, fontes, uma linha do tempo e um grafo do cenário. Um pequeno script de build em Lua transforma tudo isso neste site. Na hora do build, o script:
 - confere se cada link interno e cada citação apontam para algo que existe;
-- recalcula os atributos derivados de cada investigador (PV, PM, Sanidade, Movimento, Bônus de Dano, Corpo) pelas regras de Call of Cthulhu 7e e falha se a ficha discordar;
+- recalcula os atributos derivados (PV, PM, Sanidade, Movimento, Bônus de Dano, Corpo) de cada investigador e personagem do Guardião pelas regras de Call of Cthulhu 7e e falha se uma ficha discordar;
+- confere se cada artigo, investigador e handout está em exatamente um capítulo;
 - percorre o grafo do [[scenario-flow]] e falha se alguma cena for inalcançável ou se algum caminho acabar antes de um final;
 - gera os links de volta ("Citada em") mostrados no fim de cada página.
 
-Trate o grimório como prática de conteúdo e de programação ao mesmo tempo: narrativa escrita como dados, depois conferida por código.
+Trate o livro como prática de conteúdo e de programação ao mesmo tempo: narrativa escrita como dados, depois conferida por código.
 
-## Contexto político
-O cenário se passa durante a ditadura militar brasileira {{dictatorship-wiki}}. A censura, uma ferrovia estatal e uma militante no trem dão à mesa uma pressão real sem precisar de um vilão fardado.
+## Contribuindo
+Todo artigo termina com um jeito de enviar as suas ideias: um personagem, uma pista, uma cena, uma correção. As contribuições são revisadas pelo autor, e as aceitas recebem crédito no livro.
 ]==],
+  },
+
+  ---------------------------------------------------------------- CONDUZINDO
+  ["running"] = {
+    title = "Conduzindo o Cenário",
+    summary = "O tom, o Relógio da Névoa, um plano para três sessões e como manter a mesa segura.",
+    body = [==[
+*A Névoa sobre o Funicular* é uma investigação de tensão lenta para **três investigadores**, jogada em **duas ou três sessões** de umas quatro horas. Funciona como aventura de uma sessão se você cortar [[scene-tunnel|o Túnel]] e começar com os investigadores já juntos [[scene-festival|no Festival]].
+
+## O tom
+Frio, úmido e triste, mais do que sangrento. O horror é que os investigadores estão sendo mudados pelo ar que respiram, e que as duas saídas custam algo de verdade. Mantenha humanas as pessoas da vila: a maioria está com medo, não é má, e joga sal nos bueiros porque os avós jogavam.
+
+## O Relógio da Névoa
+A névoa é o cronômetro do cenário. Mantenha uma trilha de **10 marcas** onde os jogadores possam ver, e marque uma:
+- a cada noite que passa;
+- a cada cena que os investigadores passam sem se aproximar da [[grota-funda|Grota Funda]] (repetir uma busca, discutir no quarto, descer de volta para Santos).
+
+| Marcas | Estágio | O que muda |
+|---|---|---|
+| 1–5 | Junho | Testes de Contato a cada cena ao ar livre depois do anoitecer. O nevoeiro embaça o lado de dentro dos quartos fechados e chama as pessoas pelo nome. |
+| 6–9 | Julho | Testes de Contato **a cada hora** ao ar livre depois do anoitecer, com 1D3 de Contato numa falha; a exposição custa 1D2 PV por hora. |
+| 10 | — | A névoa toma a vila: [[ending-lost]]. |
+
+::: keeper
+Nunca anuncie as regras do relógio como ameaça. Descreva: o orvalho do lado de dentro das janelas, os cachorros que não saem, a dona da pensão salgando os travesseiros. Os jogadores vão entender.
+:::
+
+## Um plano para três sessões
+- **Sessão 1.** [[scene-arrival]], depois uma ou duas entre [[scene-yard|o Pátio]], [[scene-festival|o Festival]] e [[scene-tunnel|o Túnel]]. Termine no convite do engenheiro-chefe para jantar.
+- **Sessão 2.** [[scene-castelinho|O Jantar no Castelinho]] e o escritório, depois a subida a pé ou de locobreque até [[scene-landing|o Quarto Patamar]]. Termine na boca do bueiro.
+- **Sessão 3.** [[scene-grota|Sob a Grota Funda]], a escolha e um dos finais.
+
+## Segurança na mesa
+O cenário toca em afogamento, num irmão desaparecido e numa vila real, habitada. Combinem limites e véus antes de começar. Se alguém na mesa perdeu um parente, a trama de Lenita pode terminar com Tonico encontrado vivo, veja [[tonico]].
+
+## O pano de fundo político
+O cenário se passa durante o governo militar no Brasil {{dictatorship-wiki}}. Censura, uma ferrovia estatal e uma ativista no trem dão pressão real à mesa sem precisar de um vilão fardado: um policial na estação que recolhe os panfletos de Lenita, um editor que não publica as fotos de Arthur, um auditor que responde a Brasília.
+]==],
+  },
+
+  ---------------------------------------------------------------- INVESTIGADORES
+  ["investigators-intro"] = {
+    title = "Reunindo o Grupo",
+    summary = "Como os três investigadores se encontram, e como usar os seus no lugar deles.",
+    body = [==[
+Os três investigadores prontos chegam na mesma noite de inverno, por três motivos diferentes, e acabam debaixo do mesmo teto: a **Pensão da Dona Ercília**, a única da vila que aceita forasteiros durante o [[winter-festival|festival]].
+
+- **Eduardo "Dudu" Fonseca** sobe no último trem de Santos com uma pasta de relatórios de custos da RFFSA.
+- **Helena "Lenita" Castro** está no mesmo trem, na terceira classe, com uma caixa de panfletos e a carta do irmão (veja [[h-letter]]).
+- **Arthur Mendes** sobe a estrada velha num Fusca emprestado e chega enquanto os outros carregam as malas para dentro.
+
+Dona Ercília serve o jantar para os três juntos, porque só existe uma mesa. Deixe os jogadores apresentarem seus investigadores ali. Antes de dormirem, ela põe uma pitada de sal em cada travesseiro e não diz por quê.
+
+## Cada um segura um fio
+| Investigador | Puxa para | O que está em jogo |
+|---|---|---|
+| [[dudu]] | o dinheiro: o [[company-car]] e [[scene-yard|o Pátio]] | a loucura do pai no [[fourth-landing]] |
+| [[lenita]] | as pessoas: [[scene-festival|o Festival]] e o culto | o irmão, [[tonico]], desaparecido nos túneis |
+| [[arthur]] | a imagem: [[scene-tunnel|o Túnel]] e o [[castelinho]] | o negativo que a antiga diretoria tomou dele |
+
+## Usando investigadores próprios
+Qualquer investigador dos anos 1970 serve. Dê a cada jogador um dos três fios acima como motivo para estar na serra: alguém conferindo as contas, alguém procurando um parente desaparecido que trabalhava nos vagões-tanque, alguém que um dia viu algo numa fotografia da Serra. Acompanhe o Contato de cada um desde a primeira noite.
+
+::: keeper
+Escreva o **Contato** de cada investigador num cartão na frente dele, começando em 0. É o número mais importante deste cenário, e deve estar à vista.
+:::
+]==],
+  },
+
+  ---------------------------------------------------------------- A INVESTIGAÇÃO
+  ["scene-arrival"] = {
+    title = "1. Chegada ao Alto da Serra",
+    summary = "Uma noite de inverno, o último trem, uma vila preparando um festival de que ninguém de fora ouviu falar.",
+    body = [==[
+::: read
+O trem sai de Santos com o dia claro e entra na nuvem. Em algum ponto da subida as janelas ficam brancas e não voltam mais. Quando vocês descem no Alto da Serra, o relógio da estação marca seis e dez, mas a luz já foi embora; o nevoeiro é tão grosso que os lampiões da plataforma são só manchas laranja.
+
+A vila está ocupada. Homens empilham lenha na praça. Mulheres carregam bandejas cobertas com panos. Ninguém olha para vocês por muito tempo. Sob os sapatos, nos degraus da estação, alguma coisa estala como areia. É sal.
+:::
+
+## O que há aqui
+A **estação** do Alto da Serra e sua torre do relógio britânica, a praça em frente e as ladeiras de casas de madeira descendo até o pátio. A vila prepara o [[winter-festival|Festival de Inverno]], para o qual nenhum forasteiro foi convidado em cem anos. Um policial na estação anota o nome de todo mundo que desce do trem. Os investigadores se hospedam na **Pensão da Dona Ercília** (veja [[investigators-intro]]).
+
+## Pistas
+- **Encontrar.** Linhas de sal em todas as soleiras, inclusive na da pensão. Recentes, não antigas.
+- **Psicologia** nos moradores: eles não são hostis. Têm medo *pelos* forasteiros.
+- **Persuasão ou Charme** com Dona Ercília: "Vocês deviam ter vindo no mês que vem. Ou nunca. O festival é nosso." Ela não diz nada sobre o sal.
+- **Escutar**, do lado de fora depois de escurecer: alguém no nevoeiro chama um investigador pelo primeiro nome. Não há ninguém.
+
+## A primeira noite
+É o primeiro teste de **Contato** do cenário: cada investigador que sai depois do anoitecer testa POD (veja [[mist-contact]]). No quarto, Lenita relê a carta do irmão ([[h-letter]]).
+
+::: keeper
+Não explique a névoa. Descreva que ela está mais fria do que devia, que tem um cheiro leve de praia, que o orvalho na janela está do lado de *dentro*.
+:::
+]==],
+  },
+  ["scene-yard"] = {
+    title = "2. O Pátio Ferroviário",
+    summary = "A auditoria de Dudu: livros-caixa cheios de \"água de lastro\" e um vagão-tanque com marcas de maré por dentro.",
+    body = [==[
+::: read
+O pátio é um campo de ferro molhado. Fileiras de vagões esperam sob o nevoeiro, as rodas cobertas de gotas. Depois delas, a rotunda solta vapor, e atrás dela, meio afundado no mato, há um vagão-tanque sem número na lateral. A escotilha está aberta. Tem cheiro de mar.
+:::
+
+## O que há aqui
+O escritório do pátio, onde Dudu tem hora marcada com o escriturário da seção; a rotunda; o **vagão-tanque** abandonado do [[company-car]]; uma pilha de barris lacrados atrás do galpão. O capataz, **Moacir**, um [[cultists|cultista]], vigia os investigadores a manhã toda e não faz questão de esconder.
+
+## Pistas
+- **Contabilidade (Dudu).** A linha "água de lastro" custou à ferrovia mais do que o carvão, todos os anos desde 1946. Nenhum auditor jamais a questionou. A ordem da RFFSA suspendendo o serviço está pregada acima da mesa do escriturário: [[h-memo]].
+- **Encontrar.** Dentro do tanque: manchas de ferrugem em anéis, como marcas de maré num píer. Atrás do galpão: barris pintados com **"LIMALHA — 4º PATAMAR"**.
+- **Ciência (Geologia)** no sedimento do fundo do tanque: granito britado, limalha de ferro e um pó violeta que só pode ser ametista. Ametista não pertence a esta serra {{amethyst-usp}}.
+- **Consertos Mecânicos.** Canos de drenagem saem do desvio do tanque e sobem a serra, ao longo do plano inclinado, rumo ao [[fourth-landing]].
+
+::: history
+A ferrovia de fato dependia de máquinas fixas pesadas e cabos de aço para vencer os 796 m da Serra {{unesco}}. O vagão-tanque é invenção do cenário.
+:::
+
+## Complicações
+Se os investigadores ficarem por ali à noite, Moacir e dois cultistas passam salmoura dos barris para baldes e sobem a serra carregando à mão. Segui-los leva ao [[scene-landing|Quarto Patamar]].
+]==],
+  },
+  ["scene-festival"] = {
+    title = "3. O Festival de Inverno",
+    summary = "Fogueiras no nevoeiro, sal nos bueiros, nomes lidos em voz alta e um velho maquinista que se lembra.",
+    body = [==[
+::: read
+Ao anoitecer a praça está cheia. Fogueiras ardem em tambores de ferro e o nevoeiro transforma a luz delas em grandes globos macios. Alguém toca sanfona. Tem quentão em canecas de lata, doce de gengibre e cachaça. Crianças correm entre as pernas dos adultos jogando punhados de uma coisa branca nos bueiros, e os adultos deixam.
+:::
+
+## O que há aqui
+A festa particular das famílias ferroviárias, na véspera do rito (veja [[winter-festival]]). A maioria dos moradores é calorosa com os forasteiros quando eles têm uma caneca na mão. **Seu Ditinho** ([[old-railwayman]]), que dirigiu locobreques por cinquenta anos, está sentado na fogueira maior e conversa com quem quiser ouvir.
+
+## Pistas
+- **Persuasão ou Charme** com Seu Ditinho: "As máquinas puxavam mais pesado na subida do que a balança dizia. Sempre um vagão a mais. Um vagão que nunca estava no horário."
+- **História (Folclore Local) (Lenita).** Não existe registro deste festival em lugar nenhum: nem nos jornais, nem nos boletins da própria ferrovia.
+- **Encontrar.** Os bueiros não estão sendo limpos. Estão sendo **salgados**.
+- **Escutar**, à meia-noite: todos os lampiões da vila se apagam ao mesmo tempo, e no silêncio o nevoeiro *respira*. Todos os presentes fazem um teste de Contato.
+
+## Os nomes
+No fim da noite, o engenheiro-chefe lê, nos degraus do [[castelinho]], os nomes dos mortos e desaparecidos do ano. Um deles é **Antônio Castro**. Lenita perde 0/1D3 SAN.
+
+## Desdobramentos
+O engenheiro-chefe repara nos forasteiros. Antes de a noite acabar, um menino leva um cartão dobrado até a pensão: um convite para jantar no Castelinho, amanhã, para "os senhores da RFFSA e da imprensa, e a moça de Santos".
+]==],
+  },
+  ["scene-tunnel"] = {
+    title = "4. O Túnel",
+    summary = "A velha foto de Arthur, refeita: a névoa tem rostos, e alguém observa do alto do morro.",
+    body = [==[
+::: read
+A boca do túnel está exatamente como na cópia: um arco preto na mata, meio quilômetro serra abaixo, com o cabo entrando nele entre os trilhos. A névoa sai lá de dentro como o bafo numa manhã fria. Está tudo muito quieto. Então, em algum lugar sob os seus pés, vocês ouvem água.
+:::
+
+## O que há aqui
+Um túnel desativado no plano inclinado da Serra Nova, uma longa descida abaixo da vila. Chegar lá exige andar pela linha (um teste de **Escalar** no trecho íngreme; uma falha custa 1D6 PV numa queda). A névoa aqui é densa mesmo de dia.
+
+## Pistas
+- **Arte/Ofício (Fotografia) (Arthur).** Uma foto nova do túnel, revelada à noite no banheiro da pensão, mostra os mesmos rostos da antiga, e mais um: um rapaz de boné de ferroviário. SAN 0/1D4. Lenita reconhece o irmão.
+- **Encontrar.** Pegadas nos dormentes, molhadas de água do mar, entrando e saindo. Um boné de ferroviário com uma crosta de sal por dentro e *A. CASTRO* escrito a tinta na faixa.
+- **Escutar.** Água corre sob a rocha, serra abaixo, rumo à [[grota-funda|Grota Funda]].
+- **Encontrar**, olhando de volta para o alto do morro: o brilho de um binóculo nas janelas do [[castelinho]].
+
+## Complicações
+Cada hora passada aqui é um teste de Contato, de dia ou de noite. Um investigador que respira fundo de propósito (veja [[mist-contact]]) vê por um instante o interior da montanha: luz violeta, e algo muito grande, dormindo.
+]==],
+  },
+  ["scene-castelinho"] = {
+    title = "5. O Jantar no Castelinho",
+    summary = "O engenheiro-chefe oferece um acordo; o escritório dele guarda um século de segredos.",
+    body = [==[
+::: read
+O Castelinho fica acima da vila como um comandante na ponte de um navio. Todas as suas trinta e três janelas estão acesas. Lá dentro, pela primeira vez desde que vocês chegaram, está quente: seis lareiras, todas acesas. O engenheiro-chefe recebe vocês na porta em pessoa. É um homem alto e cansado de uns sessenta anos, educado do velho jeito britânico, e tem um cheiro leve de sal.
+:::
+
+## O que há aqui
+A casa do engenheiro-chefe (veja [[castelinho]]) e **Henrique Ashworth** ([[chief-engineer]]). O jantar é rosbife com batatas cozidas, servido por uma governanta calada. Na parede da sala de jantar há um instrumento parecido com um barômetro, com um ponteiro de cristal violeta que aponta serra abaixo.
+
+## O acordo
+Ashworth quer que os investigadores entendam, e depois que ajudem. Ele oferece a cada um aquilo que veio buscar:
+- a **Dudu**, mais um ano de "água de lastro" aprovado na auditoria, e a verdade sobre o pai;
+- a **Arthur**, o negativo, devolvido naquela noite;
+- a **Lenita**, o lugar onde está o irmão.
+
+Em troca, pede que eles partam no primeiro trem depois do festival e não digam nada. **Psicologia:** ele está apavorado, e diz a verdade sobre o negativo e sobre o irmão.
+
+## O escritório
+O escritório está trancado (**Chaveiro**, ou **Furtividade** para tirar a chave do avental da governanta). Lá estão:
+- o registro do telégrafo: [[h-telegrams]];
+- o caderno de Bento Arruda: [[h-notebook]];
+- o registro do acampamento de 1866: [[h-register]];
+- a cópia confiscada de Arthur, com a etiqueta da diretoria: [[h-photo]], e o negativo num envelope;
+- um esboço geológico de um geodo, em inglês, assinado por um engenheiro em 1867.
+
+Ler tudo leva uma hora e um teste de **Usar Bibliotecas**; custa 1D3 SAN e dá +2% em Mitos de Cthulhu.
+
+::: keeper
+Se algum investigador estiver com Contato 7 ou mais, Ashworth fala com ele nos sinais de mão silenciosos do culto durante o jantar, e ele entende. Use isso: é a coisa mais assustadora da cena.
+:::
+
+## Desdobramentos
+Se aceitarem o acordo, Ashworth os leva pessoalmente até [[scene-grota|a câmara]] na noite seguinte, para "mostrar por quê". Se recusarem ou forem pegos no escritório, ele os deixa ir, e o culto começa a vigiar a pensão.
+]==],
+  },
+  ["scene-landing"] = {
+    title = "6. O Quarto Patamar",
+    summary = "Uma casa de máquinas no meio da serra, uma caixa de limalha de ferro e um bueiro que engole o mar.",
+    body = [==[
+::: read
+A casa de máquinas do Quarto Patamar é um salão de tijolos construído em volta de um tambor de enrolar cabo do tamanho de um carrossel. A máquina está fria. No chão, ao lado dela, uma caixa de madeira transborda de pó de ferro cinzento, varrido dos cabos. No canto, uma tampa redonda de ferro no piso, com um volante de válvula. Está molhada nas bordas, e está quente.
+:::
+
+## O que há aqui
+O quarto dos cinco patamares da Serra Nova (veja [[fourth-landing]]). Para chegar, uma longa subida a pé pelo plano inclinado, ou uma viagem de [[locobreques|locobreque]] se Seu Ditinho for convencido a acender a caldeira. De noite há de dois a quatro [[cultists|cultistas]] aqui, despejando salmoura e limalha pela tampa, à mão.
+
+## Pistas
+- **Consertos Mecânicos.** A válvula abre o **bueiro**, um túnel de tijolos onde mal cabe uma pessoa rastejando, descendo para dentro da rocha.
+- **Ciência (Geologia).** As paredes de rocha do bueiro passam de granito cinza a um violeta fraco quanto mais fundo vão.
+- **Encontrar.** No depósito: uma caixa de **dinamite da ferrovia**, usada para limpar desmoronamentos, com estopim e espoletas. Faz diferença no [[ending-shatter]].
+- **Dudu**, se estiver presente: uma placa no tambor traz o nome do pai entre os ajustadores que o montaram.
+
+## O bueiro
+Rastejar pelo bueiro até a [[grota-funda|Grota Funda]] leva uns quarenta minutos no escuro e na água. Cada investigador faz um teste de **CON** ou perde 1 PV com o frio, e um teste de Contato pelos túneis.
+
+::: keeper
+Se os cultistas virem os investigadores, não gritam: fazem sinais uns para os outros e vêm em silêncio. Dois ou mais juntos ganham um dado de bônus para agarrar. Eles querem os intrusos dentro do bueiro, não mortos.
+:::
+]==],
+  },
+  ["scene-grota"] = {
+    title = "7. Sob a Grota Funda",
+    summary = "A câmara de cristal violeta, a Semente no centro e a escolha.",
+    body = [==[
+::: read
+O bueiro se abre num espaço tão grande que as lanternas não alcançam o outro lado. Toda superfície é cristal: violeta, brilhando de leve, crescido em grandes colunas nervuradas do chão ao teto, como o interior de uma catedral feita de geodo. Poças de água do mar secaram em anéis brancos no chão. No meio da câmara, selada dentro de uma coluna de cristal, uma coisa do tamanho da cabeça de uma criança pulsa devagar, cheia de luz.
+
+E a névoa, que seguiu vocês até aqui embaixo, começa a cantar.
+:::
+
+**SAN 1/1D6** ao entrar na câmara. Todos fazem um teste de Contato na hora.
+
+## O que há aqui
+O Corpo do [[amethyst-heart|Coração de Ametista]], e a **Semente** no centro. Cultistas descem baldes de salmoura do bueiro, desesperados, enquanto a criatura grita na cabeça de todos eles. Entre eles está **Tonico Castro** ([[tonico]]), com Contato 9, que fala com a voz da criatura. Se Ashworth estiver aqui, ele implora para os investigadores ajudarem a mantê-la dormindo.
+
+## O que pode ser feito
+- **Arrancar a Semente:** uma hora de trabalho com ferramentas da ferrovia e um teste bem-sucedido de **Ciência (Geologia)** ou **Consertos Mecânicos**. O barulho atrai mais 1D3 cultistas a cada quinze minutos. Tocar a Semente custa SAN 1/1D6 e +2 de Contato. Depois: [[ending-sea]].
+- **Estilhaçá-la:** a dinamite do [[scene-landing|Quarto Patamar]], encostada na coluna. Acender leva uma rodada e coragem: um teste de POD se quem acende estiver com Contato 5 ou mais. Depois: [[ending-shatter]].
+- **Ajudar o culto:** os investigadores podem carregar salmoura junto. Isso compra mais um ano, ao preço do silêncio deles, e o Relógio da Névoa volta a 0. No próximo inverno tudo recomeça.
+
+Se o Relógio da Névoa encher antes de os investigadores chegarem aqui, o cenário termina no [[ending-lost]].
+
+::: keeper
+É o momento para o qual o cenário inteiro foi construído. Deixe os jogadores discutirem. Deixe Tonico falar com Lenita numa voz que é quase a dele. Não apresse a escolha; a névoa já está fazendo isso.
+:::
+]==],
+  },
+
+  ---------------------------------------------------------------- PERSONAGENS
+  ["cultists"] = {
+    title = "Os Cultistas",
+    summary = "Capatazes, escriturários e guarda-freios de dia; carregadores de salmoura nos túneis à noite.",
+    body = [==[
+Os membros ativos da [[company-of-shadows|Companhia das Sombras]] são gente da ferrovia: o capataz do pátio, **Moacir**, o escriturário da seção, alguns guarda-freios e suas esposas. Não são monstros. Respiram a névoa de propósito há anos, ouvem a criatura toda noite e têm pavor do que acontece se ela acordar.
+
+## Como agem
+- De dia, vigiam, mandam relatórios ao [[castelinho]] pelo telégrafo e fazem questão de que os investigadores percebam que estão sendo vigiados.
+- De noite, carregam salmoura e limalha até o [[fourth-landing]] à mão, e não deixam ninguém impedir.
+- Numa luta, não dizem nada. Fazem sinais com as mãos, uma língua que a criatura ensinou a eles.
+
+@npc:cultist
+]==],
+  },
+  ["tonico"] = {
+    title = "Tonico Castro",
+    summary = "O irmão de Lenita, dezenove anos, uma Voz da Salmoura nos túneis.",
+    body = [==[
+Antônio Castro limpava os [[company-car|vagões-tanque da companhia]] em Santos até a criatura começar a chamá-lo pelo nome. O culto o trouxe para a serra para "ajudar no festival": na verdade, Ashworth esperava que uma voz nova a acalmasse. Aconteceu o contrário. Tonico desceu pelo bueiro em 16 de junho ([[h-telegrams]]) e não voltou.
+
+Ele está com **Contato 9**. Quando a névoa está densa, a criatura fala por ele, e sabe tudo o que ele sabe sobre a irmã.
+
+## Interpretando Tonico
+Ele não é vilão, e também não é bem uma vítima. Carrega salmoura com os cultistas, cantarola a canção da criatura e fala do mar como *casa*. Quando Lenita chegar até ele, dê a ele um momento de si mesmo: um apelido de infância, uma piada, o nome dela dito do jeito certo. Depois deixe a névoa tomar a voz de volta.
+
+@npc:tonico
+]==],
+  },
+  ["old-railwayman"] = {
+    title = "Seu Ditinho",
+    summary = "Um maquinista de locobreque aposentado que se lembra do vagão que nunca estava no horário.",
+    body = [==[
+Benedito Ramos dirigiu [[locobreques]] na Serra Nova por cinquenta anos e passou os últimos dez na fogueira maior de todo festival, conversando. Todo mundo o chama de **Seu Ditinho**. Ele não está no culto, e sempre desconfiou dele; mantém o Contato baixo com sal nos bolsos e uma teimosia que a vila inteira respeita.
+
+## O que ele sabe
+- As máquinas "puxavam mais pesado na subida do que a balança dizia. Sempre um vagão a mais."
+- O vagão a mais parava no Quarto Patamar toda noite e voltava leve.
+- O pai de Eduardo Fonseca era um homem bom, e "o que fizeram com ele foi pecado".
+
+## O que ele pode fazer
+Ele sabe acender a caldeira de uma locobreque e conduzi-la, se os investigadores acharem uma que ainda funcione, o que faz diferença para levar a Semente serra abaixo no [[ending-sea]]. Ele não entra nos túneis.
+
+::: history
+A locobreque nº 14, construída em 1902, foi a última a ser acesa, em 1994, e sobrevive no Museu do Funicular {{museu-funicular}}. Seu Ditinho é ficção; a máquina que ele dirigia era real.
+:::
+
+@npc:ditinho
+]==],
+  },
+
+  ---------------------------------------------------------------- DESFECHOS
+  ["aftermath"] = {
+    title = "Consequências e Recompensas",
+    summary = "Recompensas de Sanidade, o que o Contato deixa para trás e para onde a história pode ir.",
+    body = [==[
+## Recompensas de Sanidade
+| Desfecho | Recompensa |
+|---|---|
+| A Semente chega ao mar ([[ending-sea]]) | +1D10 SAN para cada sobrevivente |
+| Tonico volta para casa com Lenita | +1D6 SAN para Lenita |
+| A Semente é destruída ([[ending-shatter]]) | +1D6 SAN para cada sobrevivente |
+| Dudu descobre o que aconteceu com o pai | +1D4 SAN para Dudu |
+| Arthur recupera o negativo | +1D4 SAN para Arthur |
+| Os investigadores ajudam o culto | Nenhuma recompensa. Cada um mantém seu Contato, e ele nunca mais cai abaixo de 3. |
+
+## O que o Contato deixa
+O Contato cai 1 a cada mês passado longe da Serra, mas nunca abaixo de 1: todo investigador que respirou a névoa vai ouvir o próprio nome num nevoeiro pelo resto da vida. Quem terminou com 7 ou mais mantém a vontade de sal e ainda entende os sinais silenciosos.
+
+## A história segue
+O funicular da Serra Nova funcionou comercialmente até 1983 {{museu-funicular}}, e o Festival de Inverno de Paranapiacaba abriu ao público em 2001 {{festival-origins}}. Na ficção, as duas datas são consequência do que os investigadores fizeram: veja [[winter-festival]].
+
+## Ganchos para continuar
+- **A Maré de Santos** (depois do [[ending-sea]]): naufrágios na costa, um redemoinho visto da praia à noite e um pescador que diz que o mar está cantando.
+- **O Nevoeiro que Ficou** (depois do [[ending-shatter]]): anos depois, alguém tenta chegar de carro a uma vila que os mapas dizem que existe.
+- **O Próximo Inverno** (se eles ajudaram o culto): Ashworth morreu, e o cargo de engenheiro-chefe é oferecido a Dudu.
+]==],
+  },
+
+  ---------------------------------------------------------------- APÊNDICES
+  ["handouts"] = {
+    title = "Handouts dos Jogadores",
+    summary = "Cartas, registros e documentos que os investigadores podem encontrar, prontos para imprimir ou mostrar na tela.",
   },
 }

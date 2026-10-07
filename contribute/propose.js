@@ -29,7 +29,7 @@
       (groups[p.section] = groups[p.section] || []).push(option(id, tx(p.title)));
     }
     page.replaceChildren(...(b.sections || Object.keys(groups)).filter((s) => groups[s]).map((s) => {
-      const g = document.createElement("optgroup"); g.label = SECTIONS[lang()][s] || s; g.append(...groups[s]); return g;
+      const g = document.createElement("optgroup"); g.label = ((b.section_names || {})[lang()] || {})[s] || (SECTIONS[lang()] || {})[s] || s; g.append(...groups[s]); return g;
     }));
     if (keep && b.pages[keep]) page.value = keep;
     link();
