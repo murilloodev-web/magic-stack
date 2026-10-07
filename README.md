@@ -11,6 +11,7 @@ Each book is a playable story, written as plain Lua data and built into a static
 | Book | System | Status |
 |---|---|---|
 | [The Mist over the Funicular](books/mist-over-the-funicular/) | Call of Cthulhu 7e | complete |
+| [O Amanhã Corporativo](books/o-amanha-corporativo/) (The Corporate Tomorrow) | Cyberpunk RED, grounded | in progress: the world is complete; the opening adventure ends in open scenes |
 
 ## How it fits together
 
@@ -75,4 +76,4 @@ Setting up the Worker: [worker/README.md](worker/README.md).
 ## Licence
 
 Story content is published under **CC BY-NC-SA 4.0**. Contributions follow the [Contribution Terms](contribute/TERMOS.pt.md).
-*Call of Cthulhu* is a trademark of Chaosium Inc.; the books here are unofficial fan works.
+*Call of Cthulhu* is a trademark of Chaosium Inc.; *Cyberpunk* and *Cyberpunk RED* are trademarks of R. Talsorian Games. The books here are unofficial fan works.

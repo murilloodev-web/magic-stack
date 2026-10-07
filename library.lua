@@ -3,4 +3,5 @@
 
 return {
   "mist-over-the-funicular",
+  "o-amanha-corporativo",
 }

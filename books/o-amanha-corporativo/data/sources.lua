@@ -1,0 +1,36 @@
+-- Fontes do mundo real. Toda fonte precisa ser citada ({{id}}) em algum
+-- artigo ou na linha do tempo; o build falha se sobrar uma sem uso.
+-- `note` é traduzida em data/en/sources.lua.
+
+return {
+  { id = "east-india", title = "East India Company", publisher = "Wikipedia",
+    url = "https://en.wikipedia.org/wiki/East_India_Company",
+    note = "A companhia comercial que manteve exércitos próprios e governou grande parte do subcontinente indiano: o precedente histórico dos ESTEMPs." },
+  { id = "asteroid-mining", title = "Asteroid mining", publisher = "Wikipedia",
+    url = "https://en.wikipedia.org/wiki/Asteroid_mining",
+    note = "A ideia de extrair metais de asteroides, estudada há décadas." },
+  { id = "alcantara", title = "Alcântara Space Center", publisher = "Wikipedia",
+    url = "https://en.wikipedia.org/wiki/Alc%C3%A2ntara_Space_Center",
+    note = "A base de lançamento no Maranhão, mais perto da linha do Equador do que qualquer outra." },
+  { id = "lake-assal", title = "Lake Assal (Djibouti)", publisher = "Wikipedia",
+    url = "https://en.wikipedia.org/wiki/Lake_Assal_(Djibouti)",
+    note = "Um lago 155 metros abaixo do nível do mar, no Triângulo de Afar: o ponto mais baixo da África." },
+  { id = "bab-el-mandeb", title = "Bab-el-Mandeb", publisher = "Wikipedia",
+    url = "https://en.wikipedia.org/wiki/Bab-el-Mandeb",
+    note = "O estreito entre o Iêmen e Jibuti, na entrada do Mar Vermelho." },
+  { id = "df-rationing", title = "Após um ano e cinco meses, DF encerra nesta sexta racionamento de água", publisher = "Exame",
+    url = "https://exame.com/brasil/apos-um-ano-e-cinco-meses-df-encerra-nesta-sexta-racionamento-de-agua/",
+    note = "O fim do racionamento de água no Distrito Federal, que durou cerca de um ano e meio entre 2017 e 2018." },
+  { id = "descoberto-record", title = "Índice do reservatório do Descoberto é o menor da história", publisher = "Congresso em Foco",
+    url = "https://www.congressoemfoco.com.br/noticia/40833/racionamento-de-agua-no-distrito-federal-exclui-palacios-e-atinge-apenas-cidades-satelites",
+    note = "A represa do Descoberto no menor nível já registrado, durante a crise hídrica do DF." },
+  { id = "ogallala", title = "Ogallala Aquifer", publisher = "Wikipedia",
+    url = "https://en.wikipedia.org/wiki/Ogallala_Aquifer",
+    note = "O aquífero sob as Grandes Planícies dos Estados Unidos, esvaziado pela irrigação desde 1950." },
+  { id = "jakarta", title = "Why Indonesia is abandoning its capital city to save it", publisher = "Al Jazeera",
+    url = "https://www.aljazeera.com/news/2022/11/9/hldwhyindonesia-is-abandoning-its-capital-jakarta-to-save-ithld",
+    note = "Jacarta afunda, e a Indonésia decidiu mudar a capital de lugar." },
+  { id = "empty-diagonal", title = "Empty diagonal", publisher = "Wikipedia",
+    url = "https://en.wikipedia.org/wiki/Diagonale_du_vide",
+    note = "A faixa pouco povoada do interior da França, das Landes ao Meuse." },
+}

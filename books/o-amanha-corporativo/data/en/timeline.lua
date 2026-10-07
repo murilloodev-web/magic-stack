@@ -1,0 +1,22 @@
+-- English text for data/timeline.lua, in the same order.
+return {
+  { year = "1600–1874", text = "The East India Company keeps its own armies and rules territory. A company with troops and a border is not an invention of the future." },
+  { year = "2017–2018", text = "The Federal District lives through about a year and a half of water rationing; the Descoberto reaches its lowest level on record." },
+  { year = "2022", text = "With Jakarta sinking, Indonesia decides to move its capital." },
+  { year = "2030–2045", text = "**The Concession Era.** Indebted states privatise water, prisons, ports and civil defence. Corporations win special economic zones with their own rules." },
+  { year = "2046", text = "**The [[first-asteroid|First Asteroid]].** OmniTerra robots launched from Alcântara bring a metallic asteroid into Earth orbit and start mining it at a profit." },
+  { year = "2046–2065", text = "**The Inversion.** Companies with space operations come to hold more cash than the countries that host them, and start buying their debt." },
+  { year = "2058", text = "Brazil leases Alcântara for 99 years at auction, splitting the base between OmniTerra and Halcyon Orbital." },
+  { year = "2068", text = "OmniTerra finds out that Halcyon stole its orbital capture system and announces the sanction: whoever works with Halcyon does not work with OmniTerra." },
+  { year = "2068–2074", text = "**The [[first-corporate-war|First Corporate War]]**, fought by private security in northern Brazil. Kuro-Tech sells weapons to both sides." },
+  { year = "2074", text = "Halcyon goes bust. OmniTerra buys the wreckage, Alcântara included, and with it the whole of Brazil except the Federal District." },
+  { year = "2079", text = "OmniTerra declares formal sovereignty over the Americas: the first ESTEMP. The other big ones follow over the next two decades." },
+  { year = "2080–2100", text = "**The [[corruption-gold-rush|Corruption Gold Rush]].** The civil service sells what is left of the states and earns a place inside the companies. The REGESTs shrink." },
+  { year = "~2095", text = "The [[quarantine|Corporate Quarantine]] is born as an OmniTerra contract clause. Within a few years it is practice across the market." },
+  { year = "2097", text = "**The Sale of the Strip.** The Brasília REGEST sells the Descoberto reservoir strip to OmniTerra in exchange for the Humanitarian Contract of 2097." },
+  { year = "2111", text = "**The [[great-dismissal|Great Dismissal of the Djibouti Triangle]].** Thalassa floods the Afar depression; Petro-Vanguard and Great Rift poison the surroundings. Millions dead, all dismissed seconds before." },
+  { year = "2112–2115", text = "The [[antifaca|AntiFaCa]] is born. The media nickname the rebels spoons, the resistance adopts the symbol, and the [[spoon-origin|spoon taboo]] spreads through the ESTEMPs." },
+  { year = "2120", text = "OmniTerra launches the [[colony-dream|Colony Dream]] campaign." },
+  { year = "2123", text = "The Ladle Cell completes the replacement of all 41 employees of the Descoberto-7 Station. The station starts sending extra water to Brasília." },
+  { year = "2126", text = "**The campaign's present.** An OmniTerra auditor arrives at the Descoberto at 08:00 ([[adventure-overview|the adventure]])." },
+}
