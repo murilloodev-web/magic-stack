@@ -147,6 +147,27 @@ test("segments are accepted in either language", async () => {
   assert.equal(ok("nope", "pt").error, "unknown section");
 });
 
+test("a new book idea opens an issue with a starter book draft", async () => {
+  const res = await post(sub({ book: "_new", page: "", template: "book-idea", fields: {
+    title: "O Farol de Queimada Grande", system: "coc7", genre: "horror", pitch: "Uma ilha de cobras e um farol que acende sozinho.",
+    premise: "Em 1909 o faroleiro desaparece.", place: "Ilha da Queimada Grande, SP", period: "1909", fact: "mixed",
+    threat: "Algo nas cobras.", truth: "O farol chama.", endings: "Apagar o farol ou mantê-lo aceso.",
+    places: "O Farol — a torre de ferro\nA Enseada — onde os barcos não voltam", characters: "Zé Faroleiro — some na primeira noite",
+    role: "idea" } }));
+  assert.equal(res.status, 200, JSON.stringify(await res.clone().json()));
+  const issue = JSON.parse(calls.find((c) => c.url.includes("api.github.com")).init.body);
+  assert.equal(issue.title, "[Ideia de livro novo] O Farol de Queimada Grande");
+  assert.ok(issue.labels.includes("livro:novo") && issue.labels.includes("tipo:book-idea"));
+  assert.match(issue.body, /## O mistério/);
+  assert.match(issue.body, /books\/o-farol-de-queimada-grande\/book\.lua/);
+  assert.match(issue.body, /id = "a-enseada", section = "Places"/);
+  assert.match(issue.body, /system = "Call of Cthulhu 7e"/);
+  const missing = await post(sub({ book: "_new", page: "", template: "book-idea", fields: { title: "x" } }));
+  assert.equal(missing.status, 400);
+  const wrongTpl = await post(sub({ book: "_new", template: "npc" }));
+  assert.equal(wrongTpl.status, 400);
+});
+
 test("CORS preflight and health check", async () => {
   const pre = await worker.fetch(new Request("https://w.test/submit", { method: "OPTIONS", headers: { origin: ORIGIN } }), env);
   assert.equal(pre.status, 204);

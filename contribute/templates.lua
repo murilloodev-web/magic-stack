@@ -2,6 +2,7 @@
 --
 -- A template is one form. Each field has an id, a type and bilingual text:
 --   type     text | textarea | select | number | url
+--            heading (not a field: a titled block that groups the fields after it)
 --   label    { en = "...", pt = "..." }
 --   help     optional { en, pt } shown under the label
 --   required true/false (default false)
@@ -17,6 +18,7 @@
 --   shape = "timeline"     new entry for data/timeline.lua
 --   shape = "scene"        new node for data/flow.lua
 --   shape = "source"       new entry for data/sources.lua
+--   shape = "book"         a starting book.lua and page outline for a brand-new book (book-idea)
 -- Every field named in `draft` must exist; build.lua checks it.
 --
 -- A book can add a template or replace one with the same id in
@@ -301,5 +303,106 @@ return {
         label = L("What it supports or corrects", "O que ela sustenta ou corrige") },
     },
     draft = { shape = "source", title = "title", publisher = "publisher", url = "url", note = "note" },
+  },
+
+  ---------------------------------------------------------------- new books
+  -- Opened from "Sua história aqui" (propor-livro.html), not from a page:
+  -- a whole book idea for the shelf's author to develop.
+  {
+    id = "book-idea",
+    title = L("Idea for a new book", "Ideia para um livro novo"),
+    intro = L("Tell us the story you would like to see on the shelf. Fill in what you have; the author develops the book from it, and you are credited according to the terms.",
+              "Conte a história que você gostaria de ver na estante. Preencha o que tiver; o autor desenvolve o livro a partir disso, e você recebe crédito conforme o termo."),
+    fields = {
+      { type = "heading", label = L("The idea", "A ideia") },
+      { id = "title", type = "text", required = true, max = 100, label = L("Working title", "Título provisório") },
+      { id = "system", type = "select", required = true, label = L("System", "Sistema"),
+        options = {
+          { "coc7",     en = "Call of Cthulhu 7e",   pt = "Call of Cthulhu 7e" },
+          { "t20",      en = "Tormenta20",           pt = "Tormenta20" },
+          { "dnd5",     en = "D&D 5e",               pt = "D&D 5e" },
+          { "od2",      en = "Old Dragon 2e",        pt = "Old Dragon 2e" },
+          { "op",       en = "Ordem Paranormal",     pt = "Ordem Paranormal" },
+          { "sw",       en = "Savage Worlds",        pt = "Savage Worlds" },
+          { "gurps",    en = "GURPS",                pt = "GURPS" },
+          { "agnostic", en = "System-neutral",       pt = "Sem sistema definido" },
+          { "other",    en = "Other (say which below)", pt = "Outro (diga qual abaixo)" },
+        } },
+      { id = "system_other", type = "text", max = 80, label = L("Which other system?", "Qual outro sistema?") },
+      { id = "genre", type = "select", required = true, label = L("Genre", "Gênero"),
+        options = {
+          { "horror",      en = "Horror",                   pt = "Horror" },
+          { "mystery",     en = "Mystery / investigation",  pt = "Mistério / investigação" },
+          { "fantasy",     en = "Fantasy",                  pt = "Fantasia" },
+          { "dark-fantasy", en = "Dark fantasy",            pt = "Fantasia sombria" },
+          { "scifi",       en = "Science fiction",          pt = "Ficção científica" },
+          { "historical",  en = "Historical",               pt = "Histórico" },
+          { "adventure",   en = "Adventure",                pt = "Aventura" },
+          { "other",       en = "Other",                    pt = "Outro" },
+        } },
+      { id = "pitch", type = "text", required = true, max = 200,
+        label = L("The story in one line", "A história em uma linha"),
+        help = L("The hook a player would hear first.", "O gancho que um jogador ouviria primeiro.") },
+      { id = "premise", type = "textarea", required = true, max = 4000,
+        label = L("Premise", "Premissa"),
+        help = L("What is going on, who is involved, and why the players get pulled in.", "O que está acontecendo, quem está envolvido e por que os jogadores são puxados para dentro.") },
+
+      { type = "heading", label = L("Setting", "Cenário") },
+      { id = "place", type = "text", required = true, max = 120, label = L("Where it happens", "Onde acontece") },
+      { id = "period", type = "text", required = true, max = 80, label = L("When it happens", "Quando acontece") },
+      { id = "fact", type = "select", required = true, label = L("Is the setting real?", "O cenário é real?"), options = FACT_OPTIONS },
+      { id = "tone", type = "textarea", max = 1500, label = L("Tone and atmosphere", "Tom e atmosfera"),
+        help = L("What it should feel like at the table: sounds, smells, weather, mood.", "Como deve parecer na mesa: sons, cheiros, clima, sensação.") },
+      { id = "references", type = "textarea", max = 1500, label = L("References and sources", "Referências e fontes"),
+        help = L("Real history, books, films or games that inspired it. Links are welcome.", "História real, livros, filmes ou jogos que inspiraram. Links são bem-vindos.") },
+
+      { type = "heading", label = L("The mystery", "O mistério") },
+      { id = "threat", type = "textarea", required = true, max = 3000, label = L("The threat or antagonist", "A ameaça ou o antagonista") },
+      { id = "truth", type = "textarea", required = true, max = 3000,
+        label = L("The hidden truth", "A verdade escondida"),
+        help = L("What is really going on, which the players discover by the end.", "O que de fato está acontecendo, e que os jogadores descobrem até o fim.") },
+      { id = "hooks", type = "textarea", max = 2000, label = L("Why the characters get involved", "Por que os personagens se envolvem") },
+
+      { type = "heading", label = L("Elements", "Elementos") },
+      { id = "places", type = "textarea", max = 3000, label = L("Places", "Locais"),
+        help = L("One per line: name — what it is and what is hidden there.", "Um por linha: nome — o que é e o que se esconde lá.") },
+      { id = "characters", type = "textarea", max = 3000, label = L("Characters", "Personagens"),
+        help = L("One per line: name — who they are and what they want.", "Um por linha: nome — quem é e o que quer.") },
+      { id = "factions", type = "textarea", max = 2000, label = L("Factions and groups", "Facções e grupos"),
+        help = L("One per line: name — what they want.", "Um por linha: nome — o que querem.") },
+      { id = "supernatural", type = "textarea", max = 2000, label = L("Supernatural, magic or technology", "Sobrenatural, magia ou tecnologia"),
+        help = L("Creatures, artefacts, rituals, rules of the world.", "Criaturas, artefatos, rituais, regras do mundo.") },
+      { id = "clues", type = "textarea", max = 2000, label = L("Clues and handouts", "Pistas e documentos para os jogadores") },
+
+      { type = "heading", label = L("Structure", "Estrutura") },
+      { id = "opening", type = "textarea", max = 2000, label = L("Opening scene", "Cena de abertura") },
+      { id = "scenes", type = "textarea", max = 3000, label = L("Key scenes", "Cenas-chave"),
+        help = L("One per line, in a rough order.", "Uma por linha, numa ordem aproximada.") },
+      { id = "endings", type = "textarea", required = true, max = 3000, label = L("Possible endings", "Finais possíveis") },
+      { id = "pcs", type = "textarea", max = 2000, label = L("Ideas for player characters", "Ideias de personagens para os jogadores") },
+      { id = "length", type = "select", label = L("Length", "Duração"),
+        options = {
+          { "one-shot", en = "One-shot (one session)", pt = "One-shot (uma sessão)" },
+          { "short",    en = "2–3 sessions",           pt = "2–3 sessões" },
+          { "mini",     en = "Short campaign",         pt = "Campanha curta" },
+          { "long",     en = "Long campaign",          pt = "Campanha longa" },
+        } },
+      { id = "players", type = "text", max = 40, label = L("Group size", "Tamanho do grupo") },
+      { id = "warnings", type = "textarea", max = 1000, label = L("Sensitive themes", "Temas sensíveis"),
+        help = L("Content the table should agree on before playing.", "Conteúdos que a mesa deve combinar antes de jogar.") },
+
+      { type = "heading", label = L("Working together", "Parceria") },
+      { id = "role", type = "select", required = true, label = L("How would you like to take part?", "Como você quer participar?"),
+        options = {
+          { "idea",    en = "Just the idea: the author develops it",      pt = "Só a ideia: o autor desenvolve" },
+          { "cowrite", en = "I would like to co-write it",                pt = "Quero escrever junto" },
+          { "material", en = "I have material ready to send",             pt = "Tenho material pronto para enviar" },
+        } },
+      { id = "material", type = "url", label = L("Link to your material (optional)", "Link para o seu material (opcional)") },
+      { id = "why", type = "textarea", max = 1500, label = L("Why this story?", "Por que esta história?") },
+    },
+    draft = { shape = "book", title = "title", system = "system", genre = "genre", pitch = "pitch", premise = "premise",
+              place = "place", period = "period", fact = "fact",
+              places = "places", characters = "characters", factions = "factions", endings = "endings" },
   },
 }

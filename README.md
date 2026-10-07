@@ -65,6 +65,7 @@ reader on a page → "Contribute" → form for that page and section
       → author reviews, sets the credit level, pastes into data/, commits
 ```
 
+- **"Sua história aqui"** (`propor-livro.html`) offers three ways in: send an **idea for a new book** through a long, sectioned form (no GitHub; the author develops it, and the issue comes with a starter `book.lua` and page outline), **add to a book on the shelf** by picking the book and the part (no GitHub), or send a **complete book** by pull request.
 - **Context contributions** (a character, a scene, an ending, a correction) go through the form. See [contribute/TERMOS.pt.md](contribute/TERMOS.pt.md) for consent and the three credit levels.
 - **New pages or new books** go through a pull request: copy the shape of `books/mist-over-the-funicular/`, add the book to `library.lua`, and run `lua build.lua`.
 - To change the questions a page asks, edit `contribute/templates.lua`, or add a `contrib.lua` inside a book to override a template for that book only.

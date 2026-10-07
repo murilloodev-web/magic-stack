@@ -117,7 +117,18 @@ export function _resetCache() { formsCache = null; }
 // ---------------------------------------------------------------------------
 const str = (x) => (typeof x === "string" ? x.replace(/\r\n?/g, "\n").trim() : "");
 
+// A new book idea (contribute.html?idea=1) is not tied to an existing book or page.
+const IDEA_BOOK = { title: { pt: "Ideia de livro novo", en: "New book idea" }, open: true };
+const IDEA_PAGE = { title: { pt: "Sua história aqui", en: "Your story here" }, segments: [] };
+
 export function validate(sub, forms) {
+  const isIdea = sub.book === "_new";
+  if (isIdea) {
+    if (!forms.idea || sub.template !== forms.idea.template) return { error: "unknown form", field: null };
+    forms = Object.assign({}, forms, { books: Object.assign({}, forms.books, {
+      _new: Object.assign({}, IDEA_BOOK, { pages: { _idea: Object.assign({}, IDEA_PAGE, { templates: [forms.idea.template] }) } }) }) });
+    sub = Object.assign({}, sub, { page: "_idea", segment: "" });
+  }
   const book = forms.books[sub.book];
   if (!book || !book.open) return { error: "unknown or closed book", field: null };
   const page = book.pages[sub.page];
@@ -134,6 +145,7 @@ export function validate(sub, forms) {
   const fields = {};
   const given = sub.fields && typeof sub.fields === "object" ? sub.fields : {};
   for (const f of tpl.fields) {
+    if (f.type === "heading") continue;
     const val = str(given[f.id]);
     if (f.required && !val) return { error: "required", field: f.id };
     if (!val) { fields[f.id] = ""; continue; }
@@ -190,11 +202,16 @@ export function buildIssue(v, siteUrl, now) {
   const { book, page, segment, tpl, fields, contributor, consent, lang } = v;
   const pageUrl = `${siteUrl}${book.id}/${lang}/${page.id}.html${segment ? "#" + segment.id : ""}`;
   const bookTitle = tx(book.title, "pt"), pageTitle = tx(page.title, "pt");
-  const title = `[${bookTitle}] ${pageTitle}${segment ? " › " + segment.title : ""} — ${tx(tpl.title, "pt")}: ${headline(v)}`.slice(0, 250);
+  const isIdea = book.id === "_new";
+  const title = (isIdea
+    ? `[Ideia de livro novo] ${headline(v)}`
+    : `[${bookTitle}] ${pageTitle}${segment ? " › " + segment.title : ""} — ${tx(tpl.title, "pt")}: ${headline(v)}`).slice(0, 250);
 
   const content = tpl.fields
-    .filter((f) => fields[f.id])
+    .filter((f) => f.type === "heading" || fields[f.id])
+    .filter((f, i, all) => f.type !== "heading" || (all[i + 1] && all[i + 1].type !== "heading"))
     .map((f) => {
+      if (f.type === "heading") return `## ${tx(f.label, "pt")}`;
       let val = fields[f.id];
       if (f.type === "select") val = tx((f.options.find((o) => o.value === val) || {}).label, "pt") || val;
       return `### ${tx(f.label, "pt")}\n\n${quote(val)}`;
@@ -211,9 +228,11 @@ export function buildIssue(v, siteUrl, now) {
     "",
     "| | |",
     "|---|---|",
-    `| Livro | ${bookTitle} |`,
-    `| Página | [${pageTitle}](${pageUrl}) |`,
-    `| Seção | ${segment ? segment.title : "página inteira"} |`,
+    ...(isIdea ? ["| Livro | **livro novo** (ideia enviada por \"Sua história aqui\") |"] : [
+      `| Livro | ${bookTitle} |`,
+      `| Página | [${pageTitle}](${pageUrl}) |`,
+      `| Seção | ${segment ? segment.title : "página inteira"} |`,
+    ]),
     `| Formulário | \`${tpl.id}\` |`,
     `| Idioma do envio | ${lang} |`,
     `| Recebido em | ${now.toISOString()} |`,
@@ -224,7 +243,7 @@ export function buildIssue(v, siteUrl, now) {
     `- E-mail: ${contributor.email}`,
     `- Crédito: ${creditLine(contributor)}`,
     "",
-    "## Conteúdo",
+    isIdea ? "# A ideia" : "## Conteúdo",
     "",
     content,
     "",
@@ -254,7 +273,7 @@ export function buildIssue(v, siteUrl, now) {
   return {
     title,
     body,
-    labels: ["contribuição", "aguardando-revisão", `livro:${book.id}`, `tipo:${tpl.id}`],
+    labels: ["contribuição", "aguardando-revisão", isIdea ? "livro:novo" : `livro:${book.id}`, `tipo:${tpl.id}`],
   };
 }
 
@@ -382,6 +401,38 @@ export function luaDraft(v, now) {
     lines.push(`  url = ${luaQ(f[d.url])},`);
     lines.push(`  note = ${luaQ(f[d.note])},`);
     lines.push("},");
+  }
+  else if (d.shape === "book") {
+    const id = slug(f[d.title]);
+    const opt = (fid) => { const fl = tpl.fields.find((x) => x.id === fid); const o = fl && fl.options && fl.options.find((x) => x.value === f[fid]); return o ? tx(o.label, "en") : f[fid] || ""; };
+    lines.push(`-- a new book: create books/${id}/ (copy the shape of books/mist-over-the-funicular/),`);
+    lines.push(`-- add "${id}" to library.lua, then write data/ and data/<lang>/ from the idea above`, credit, "");
+    lines.push(`-- books/${id}/book.lua`, "return {");
+    lines.push(`  id = ${luaQ(id)},`);
+    lines.push(`  title = ${luaQ(f[d.title])},`);
+    lines.push(`  system = ${luaQ(f.system === "other" && f.system_other ? f.system_other : opt(d.system))},`);
+    lines.push(`  genre = ${luaQ(opt(d.genre))},`);
+    lines.push(`  author = "Murillo França M. da Silva", -- TODO: co-authors per the credit level`);
+    lines.push(`  lang = ${luaQ(v.lang)},`);
+    lines.push(`  status = "draft",`);
+    lines.push(`  blurb = ${luaQ(f[d.pitch])},`);
+    lines.push(`  period = ${luaQ(f[d.period])},`);
+    lines.push(`  place = ${luaQ(f[d.place])},`);
+    lines.push(`  spine = { color = "#3a2a22", light = "#5a4232", band = "#f3b04a", ink = "#dfe7d9", w = 40, h = 170 },`);
+    lines.push(`  open_contributions = false,`, "}", "");
+    // a page outline from the lists the contributor gave (one item per line)
+    const items = (fid, section) => (f[fid] || "").split("\n").map((l) => l.trim().replace(/^[-*•]\s*/, "")).filter(Boolean)
+      .map((l) => { const [name, ...rest] = l.split(/\s+[—–-]\s+/); return { name: name.trim(), text: rest.join(" — ").trim(), section }; });
+    const pages = [{ name: "Synopsis", text: f[d.premise], section: "The Scenario" },
+      ...items(d.places, "Places"), ...items(d.characters, "Factions"), ...items(d.factions, "Factions")];
+    lines.push(`-- books/${id}/data/pages.lua (outline)`, "return {");
+    for (const p of pages) {
+      lines.push(`  { id = ${luaQ(slug(p.name))}, section = ${luaQ(p.section)}, kind = ${luaQ(f[d.fact] || "fiction")},`);
+      lines.push(`    title = ${luaQ(p.name)}, summary = "TODO",`);
+      lines.push(`    body = ${luaLong(p.text || "TODO")} },`);
+    }
+    if (f[d.endings]) lines.push(`  { id = "endings", section = "Endings", kind = "fiction", title = "Endings", summary = "TODO",`, `    body = ${luaLong(f[d.endings])} },`);
+    lines.push("}");
   }
   if (f.notes) lines.push("", comment(`note from the contributor: ${f.notes}`));
   return lines.join("\n").replace(/```/g, "ˋˋˋ");

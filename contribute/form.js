@@ -45,10 +45,16 @@
     .then((data) => { F = data; start(); })
     .catch(() => { app.textContent = "The form could not be loaded. Please reload the page."; });
 
+  // contribute.html?idea=1 — a whole new book idea, not tied to a page
+  const IDEA = params.has("idea");
+  const IDEA_BOOK = { title: { pt: "Sua história aqui", en: "Your story here" }, open: true, pages: {} };
+  const IDEA_PAGE = { title: { pt: "Ideia para um livro novo", en: "Idea for a new book" }, segments: [] };
+
   function start() {
-    const bookId = params.get("book"), pageId = params.get("page");
-    const b = F.books[bookId];
-    const p = b && b.pages[pageId];
+    const bookId = IDEA ? "_new" : params.get("book"), pageId = IDEA ? "_idea" : params.get("page");
+    if (IDEA && F.idea) IDEA_PAGE.templates = [F.idea.template];
+    const b = IDEA ? IDEA_BOOK : F.books[bookId];
+    const p = IDEA ? IDEA_PAGE : b && b.pages[pageId];
     // the site-wide language (switch at the top right); see shelf/lang-head.html
     lang = window.msLang ? window.msLang() : (params.get("lang") || F.site.default_lang);
     if (!F.site.langs.includes(lang)) lang = F.site.default_lang;
@@ -75,7 +81,7 @@
   }
 
   const segs = () => (Array.isArray(page.segments) ? page.segments : (page.segments[lang] || []));
-  const backHref = () => `${book.id}/${lang}/${page.id}.html${seg ? "#" + seg : ""}`;
+  const backHref = () => (IDEA ? "propor-livro.html" : `${book.id}/${lang}/${page.id}.html${seg ? "#" + seg : ""}`);
 
   // ---------- render ----------
   function render() {
@@ -92,7 +98,7 @@
         el("a", { class: "back", href: back, text: "← " + t("sent_back") })),
       el("p", { class: "kicker", text: `${t("contribute_to")} · ${tx(book.title)}` }),
       el("h1", { text: tx(page.title) }),
-      el("div", { class: "where" },
+      IDEA ? null : el("div", { class: "where" },
         el("label", { for: "f-seg", text: t("segment") }), segSelect));
 
     let chooser = null;
@@ -168,6 +174,7 @@
   }
 
   function fieldRow(f) {
+    if (f.type === "heading") return el("h3", { class: "group", text: tx(f.label) });
     const id = "f-" + f.id;
     const req = Boolean(f.required);
     const label = el("label", { for: id },
@@ -202,7 +209,7 @@
   function collect(form) {
     const fd = new FormData(form || app.querySelector("form"));
     const fields = {};
-    for (const f of template().fields) fields[f.id] = (fd.get(f.id) || "").toString().trim();
+    for (const f of template().fields) if (f.type !== "heading") fields[f.id] = (fd.get(f.id) || "").toString().trim();
     return {
       fields,
       contributor: {
