@@ -286,3 +286,20 @@ table.contact { width: 100%; border-collapse: collapse; margin: .6rem 0 1.4rem; 
 .pip { width: 8px; height: 8px; background: var(--rule); display: inline-block; }
 .pip.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 .contact tbody tr:last-child .pip.on { background: var(--blood); box-shadow: 0 0 6px var(--blood); }
+
+/* ---- Magic Stack: shelf link and contribution entry points ---- */
+.shelf-link { font: 400 .72rem/1 var(--pixel); color: var(--ink-soft); text-decoration: none;
+  text-transform: uppercase; letter-spacing: .06em; margin-right: .9rem; white-space: nowrap; }
+.shelf-link:hover { color: var(--lamp); }
+.topbar-left { display: flex; align-items: center; min-width: 0; }
+@media (max-width: 420px) { .shelf-link { margin-right: .6rem; } .brand { font-size: 1.2rem; } }
+.contrib-seg { font: 400 .62rem/1 var(--pixel); color: var(--ink-soft); text-decoration: none;
+  text-transform: uppercase; letter-spacing: .06em; margin-left: .6rem; vertical-align: middle;
+  opacity: .55; white-space: nowrap; transition: opacity .15s, color .15s; }
+h2:hover .contrib-seg, .contrib-seg:focus-visible { opacity: 1; }
+.contrib-seg:hover { color: var(--lamp); opacity: 1; }
+@media (hover: none) { .contrib-seg { opacity: .9; } }
+.contrib { margin: 2.6rem 0 1.4rem; padding: 1.2rem 1.4rem; background: var(--panel);
+  border-left: var(--px) solid var(--lamp); }
+.contrib h2 { margin-top: 0; }
+.contrib p { color: var(--ink-soft); margin: .2rem 0 1rem; }

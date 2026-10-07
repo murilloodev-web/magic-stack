@@ -1,4 +1,4 @@
-name: Build and publish the grimoire
+name: Build and publish the Magic Stack
 
 on:
   push:
@@ -21,8 +21,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Lua 5.4
         run: sudo apt-get update && sudo apt-get install -y lua5.4
-      - name: Validate and build (lua build.lua)
+      - name: Validate and build every book, the shelf and the forms
         run: lua5.4 build.lua
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test the contribution Worker against the generated forms
+        working-directory: worker
+        run: npm test
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

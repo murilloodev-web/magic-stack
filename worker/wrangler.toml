@@ -1,0 +1,16 @@
+name = "magic-stack-contrib"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+# the site that may post to this Worker (comma-separated)
+ALLOWED_ORIGINS = "https://murilloodev-web.github.io"
+# forms.json published by the site build: the Worker validates against it
+FORMS_URL = "https://murilloodev-web.github.io/magic-stack/forms.json"
+SITE_URL = "https://murilloodev-web.github.io/magic-stack/"
+# private repository where contributions wait for review
+GITHUB_REPO = "murilloodev-web/magic-stack-contribuicoes"
+
+# Secrets — never commit them. Set with:
+#   npx wrangler secret put GITHUB_TOKEN       (fine-grained token: Issues read/write on GITHUB_REPO only)
+#   npx wrangler secret put TURNSTILE_SECRET   (Turnstile widget secret key)

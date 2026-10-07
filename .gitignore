@@ -1,2 +1,6 @@
 # docs/ is built by GitHub Actions from the Lua sources
 docs/
+build/
+worker/node_modules/
+worker/.wrangler/
+worker/.dev.vars
