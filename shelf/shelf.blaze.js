@@ -43,7 +43,7 @@ function blazeStyle() {
 
 function makeBlaze(backHost, frontHost, opts) {
   const scale = (opts && opts.scale) || 1;   // the candle's fire is a tiny one
-  const style = blazeStyle();
+  const style = (opts && opts.style) || blazeStyle();
   const sim = style === 'real' || style === 'soft';
   const cell = style === 'soft' && scale >= 1 ? 2 : 1;   // soft: twice as chunky (the candle's stays fine)
   const layers = [backHost, frontHost].map((host, i) => {
@@ -239,5 +239,78 @@ function makeBlaze(backHost, frontHost, opts) {
     },
     get on() { return fuel; },
     style,
+  };
+}
+
+// The easter egg of the easter egg: all seven objects around the circle in
+// the right order summon a portrait in a frame of fire. The photo sits in
+// the middle; fuel runs round its edge, so flames lick up its sides and rise
+// above it.
+function makeFrameFire(host, src, caption) {
+  const C = 4;                                   // CSS px per fire cell
+  const P = 54, SIDE = 9, TOP = 26, BOT = 6;    // photo size and margins, in cells
+  const gw = P + SIDE * 2, gh = P + TOP + BOT;
+  const wrap = document.createElement('div');
+  wrap.className = 'ms-egg'; wrap.hidden = true; wrap.setAttribute('aria-hidden', 'true');
+  const cv = document.createElement('canvas');
+  cv.width = gw; cv.height = gh; cv.className = 'ms-egg-fire';
+  Object.assign(cv.style, { width: gw * C + 'px', height: gh * C + 'px' });
+  const img = document.createElement('img');
+  img.src = src; img.alt = ''; img.className = 'ms-egg-dog';
+  Object.assign(img.style, { left: SIDE * C + 'px', top: TOP * C + 'px', width: P * C + 'px', height: P * C + 'px' });
+  const txt = document.createElement('p');
+  txt.className = 'ms-egg-text'; txt.textContent = caption;
+  wrap.append(cv, img, txt);
+  host.append(wrap);
+  const ctx = cv.getContext('2d'), im = ctx.createImageData(gw, gh), heat = new Uint8Array(gw * gh);
+  const ramp = BLAZE_SOFT, ring = [];
+  for (let x = SIDE - 1; x <= SIDE + P; x++) { ring.push((TOP - 1) * gw + x); ring.push((TOP + P) * gw + x); }
+  for (let y = TOP; y < TOP + P; y++) for (const dx of [1, 2, 3]) { ring.push(y * gw + SIDE - dx); ring.push(y * gw + SIDE + P - 1 + dx); }
+  let timer = null, fuel = false;
+  function step() {
+    if (fuel) for (const i of ring) heat[i] = Math.random() < 0.6 ? 44 - ((Math.random() * 8) | 0) : (Math.random() * 14) | 0;
+    let alive = false;
+    for (let y = 1; y < gh; y++) for (let x = 0; x < gw; x++) {
+      const src = y * gw + x, h = heat[src];
+      if (!h) { heat[src - gw] = 0; continue; }
+      alive = true;
+      const dst = src - gw - ((Math.random() * 3) | 0) + 1;
+      const k = (Math.random() < 0.7 ? 2 : 0) + (Math.random() < 0.2 ? 2 : 0);
+      if (dst >= 0 && dst < heat.length) heat[dst] = Math.max(0, h - k);
+    }
+    return alive;
+  }
+  function draw() {
+    const d = im.data;
+    for (let i = 0; i < heat.length; i++) {
+      const h = heat[i], o = i * 4;
+      if (h < 12) { d[o + 3] = 0; continue; }
+      const c = ramp[Math.min(ramp.length - 1, Math.floor(((h - 12) / 32) * ramp.length))];
+      d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+    }
+    ctx.putImageData(im, 0, 0);
+  }
+  function frame() {
+    let more = false;
+    for (let n = 0; n < 2; n++) more = step() || more;
+    draw();
+    if (!more && !fuel) { clearInterval(timer); timer = null; wrap.hidden = true; }
+  }
+  return {
+    width: gw * C, height: gh * C,
+    place(x, y) { Object.assign(wrap.style, { left: Math.round(x) + 'px', top: Math.round(y) + 'px' }); },
+    set(on, reduced) {
+      if (on === fuel) return;
+      fuel = on;
+      wrap.classList.toggle('is-on', on);
+      if (on) {
+        wrap.hidden = false;
+        if (reduced) { for (let n = 0; n < 80; n++) step(); draw(); return; }
+        for (let n = 0; n < 20; n++) step();
+        if (!timer) timer = setInterval(frame, 60);
+      } else if (reduced) { heat.fill(0); wrap.hidden = true; }
+      else if (!timer) timer = setInterval(frame, 60);
+    },
+    get on() { return fuel; },
   };
 }

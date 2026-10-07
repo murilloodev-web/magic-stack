@@ -364,6 +364,28 @@ E.table.before(propsShelf);
 // table (behind the book), front flames over the table objects.
 const blaze = makeBlaze(E.table, E.props);
 const candleBlaze = makeBlaze(E.table, E.props, { scale: 0.22 });
+// …and all seven objects round the circle, in the right order, summon the dog
+const dogBlaze = makeBlaze(E.table, E.props, { style: 'magic' });
+dogBlaze.tint('#b48cf0');
+const dogFrame = makeFrameFire(E.props, 'egg-dog.png', 'Que que você tá arrumando, garoto?');
+// clockwise from the top, as on screen: the lamp at the head of the circle
+const RITE = ['lamp', 'orb', 'scroll', 'candle', 'potion', 'dice', 'stack'];
+function riteDone() {
+  if (S.placedId || !blazeBox || !S.lay || !S.lay.table) return false;
+  const t = S.lay.table, ang = [];
+  for (const id of RITE) {
+    const el = propEls[id];
+    if (!el || el.hidden || el.parentNode === propsShelf) return false;
+    const bx = el.offsetLeft + el.offsetWidth / 2 - t.x - blazeBox.cx, by = el.offsetTop + el.offsetHeight - 8 - t.y - blazeBox.cy;
+    const ex = bx / blazeBox.rx, ey = by / blazeBox.ry;
+    if (ex * ex + ey * ey > 2.6) return false;          // on or near the ring
+    ang.push({ id, a: Math.atan2(ey, ex) });
+  }
+  const lampA = ang[0].a;
+  if (lampA > -Math.PI / 4 || lampA < -3 * Math.PI / 4) return false;   // the lamp at the top
+  ang.sort((p, q) => ((p.a - lampA + 2 * Math.PI) % (2 * Math.PI)) - ((q.a - lampA + 2 * Math.PI) % (2 * Math.PI)));
+  return ang.every((x, i) => x.id === RITE[i]);
+}
 let blazeBox = null;
 function boxInCircle(box, d) {
   if (!blazeBox || !S.lay || !S.lay.table) return false;
@@ -381,7 +403,12 @@ propsIn.className = 'ms-props ms-props-in';
 propsIn.setAttribute('aria-hidden', 'true');
 E.table.append(propsIn);
 function checkBlaze() {
-  const lamp = inCircle(propEls.lamp), candle = !lamp && inCircle(propEls.candle);
+  const rite = riteDone();
+  const lamp = !rite && inCircle(propEls.lamp), candle = !rite && !lamp && inCircle(propEls.candle);
+  if (rite && !dogBlaze.on) announce('Que que você tá arrumando, garoto?');
+  dogBlaze.set(rite, isReduced());
+  if (blazeBox && S.lay && S.lay.table) dogFrame.place(S.lay.table.x + blazeBox.cx - dogFrame.width / 2, Math.max(8, S.lay.table.y + blazeBox.cy - blazeBox.ry * 1.3 - dogFrame.height - 70));
+  dogFrame.set(rite, isReduced());
   if (lamp && !blaze.on) announce(lang() === 'pt' ? 'O círculo pega fogo.' : 'The circle bursts into flame.');
   if (candle && !candleBlaze.on) announce(lang() === 'pt' ? 'Uma chaminha acende no círculo.' : 'A tiny flame lights up in the circle.');
   blaze.set(lamp, isReduced());
@@ -399,6 +426,7 @@ function renderBeams() {
   Object.assign(propsIn.style, { left: -lay.table.x + 'px', top: -lay.table.y + 'px' });
   blaze.layout(blazeBox, origin);
   candleBlaze.layout(blazeBox, origin);
+  dogBlaze.layout(blazeBox, origin);
   if (!S.pdrag) setTimeout(renderProps, 0);   // re-seat objects against the new circle
   Object.assign(E.glowbox.style, { left: (zx - rx * 1.25) + 'px', top: (zy - ry * 1.25) + 'px', width: (rx * 2.5) + 'px', height: (ry * 2.5) + 'px' });
   for (let i = 0; i < 22; i++) {
@@ -623,6 +651,7 @@ function propMove(e) {
     p.active = true;
     if (p.id === 'lamp') blaze.set(false, isReduced());
     if (p.id === 'candle') candleBlaze.set(false, isReduced());
+    if (dogBlaze.on) { dogBlaze.set(false, isReduced()); dogFrame.set(false, isReduced()); }
   }
   const rr = E.root.getBoundingClientRect();
   let lampBook = null;
