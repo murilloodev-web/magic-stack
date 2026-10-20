@@ -1,22 +1,33 @@
 -- tools/art.lua — the FiendFlayer pixel art, shared by the banner (on the
--- book's cover page) and the cover on the Magic Stack table.
+-- book's cover page) and the cover on the Magic Stack table: an open field
+-- at night, seen almost from above, with a summoning circle burning in the
+-- grass, a fiend standing in it and a knight watching from a distance.
 --
 --   local art = dofile("tools/art.lua")
---   art.svg(art.scene(W, H, { cx = ..., top = ... }))
+--   art.svg(art.field(W, H, { cx = ..., cy = ..., r = ..., knight = { x, y } }))
 --
 -- Everything is deterministic: the same call always draws the same picture.
 
 local art = {}
 
 art.C = {
-  outline = "#12070b",
-  sky = { "#22070d", "#3a0b14", "#5a1018", "#842019", "#b23a1c", "#d8611f" },
-  ember = "#f2a845", spark = "#ffd27a",
-  rock = "#1c090e", rock2 = "#2a0f15",
-  ground = "#14070b", lava = "#e8642f", lava2 = "#f2a845", lava3 = "#9e2a18",
-  red = "#b0222f", red_hi = "#d23a44", red_lo = "#741522",
-  purple = "#8a3fc4", purple_lo = "#5f2493", tentacle = "#a75ce8", tentacle_hi = "#c98cf2",
-  horn = "#2e1218", horn_hi = "#55303a", eye = "#f2a845", mouth = "#2a0610",
+  outline = "#0d0a08",
+  grass = { "#1b2615", "#212e19", "#28371d", "#2f4021", "#384b27" },
+  tuft = "#46592f",
+  dirt = "#2e2418", dirt2 = "#3a2e1e",
+  rock = "#4a4a52", rock_lo = "#2a2a30",
+  canopy = "#111a0e", canopy2 = "#18240f", canopy_hi = "#24341a",
+  scorch = "#1a0f0c", scorch2 = "#2a1410", ember_floor = "#4a1a14", ember_floor2 = "#6a2418",
+  glow = { "#3a1a20", "#4a1e2c", "#3a1838" },
+  ring = "#d23a2a", ring_hi = "#f2a845", ring_lo = "#8e1b20",
+  sigil = "#a75ce8", sigil_lo = "#6b2fa0",
+  flame = "#ffd27a",
+  shadow = "#0a0d08",
+  -- the knight
+  steel = "#a8aab4", steel_hi = "#d8dae2", steel_lo = "#5e606c", cape = "#8e1b2a", cape_lo = "#5e1018",
+  -- the fiend
+  skin = "#b0222f", skin_hi = "#d23a44", horn = "#2e1218", wing = "#8a2232", wing_lo = "#5e1624",
+  purple = "#8a3fc4", aura = "#a8361c",
 }
 local C = art.C
 
@@ -32,155 +43,189 @@ local function canvas(W, H)
   local g = { W = W, H = H }
   for y = 0, H - 1 do g[y] = {} end
   function g.set(x, y, c) x, y = math.floor(x + .5), math.floor(y + .5); if x >= 0 and x < W and y >= 0 and y < H then g[y][x] = c end end
-  function g.get(x, y) if x >= 0 and x < W and y >= 0 and y < H then return g[y][x] end end
   return g
 end
 
----------------------------------------------------------------------------
--- Avernus: dithered sky, embers, jagged rock, a river of fire
----------------------------------------------------------------------------
-local function landscape(g, o)
-  local W, H = g.W, g.H
-  local horizon = math.floor(H * .66)
-  for y = 0, H - 1 do
-    local t = math.min(y / horizon, 1) * (#C.sky - 1)
-    local i = math.floor(t)
-    local f = t - i
-    for x = 0, W - 1 do
-      -- 2×2 ordered dither between neighbouring bands
-      local thr = o.flat and .5 or ({ [0] = { [0] = .2, .7 }, { [0] = .95, .45 } })[y % 2][x % 2]
-      g[y][x] = C.sky[math.min(i + (f > thr and 2 or 1), #C.sky)]
-    end
-  end
-  -- far ridge, then near ridge
-  for x = 0, W - 1 do
-    local far = horizon - 6 - math.floor(4 * math.abs(math.sin(x * .11)) + 3 * noise(x, 1, 7) + 2 * math.sin(x * .031))
-    for y = far, H - 1 do g.set(x, y, C.rock2) end
-    local near = horizon - 1 - math.floor(3 * math.abs(math.sin(x * .23 + 1.7)) + 3 * noise(x, 2, 9))
-    for y = near, H - 1 do g.set(x, y, C.rock) end
-  end
-  -- the ground and a river of fire winding across it
-  local gy = horizon + 4
-  for y = gy, H - 1 do for x = 0, W - 1 do g.set(x, y, C.ground) end end
-  for x = 0, W - 1 do
-    local cy = gy + (H - gy) * .5 + math.sin(x * .07) * (H - gy) * .28
-    local w = 1.6 + math.sin(x * .19) * .8
-    for y = math.floor(cy - w - 1), math.floor(cy + w + 1) do
-      local d = math.abs(y - cy)
-      if d <= w then g.set(x, y, d < w * .45 and C.lava2 or C.lava)
-      elseif d <= w + 1 and noise(x, y, 3) > .4 then g.set(x, y, C.lava3) end
-    end
-  end
-  -- embers drifting up
-  for y = 0, horizon - 2 do
-    for x = 0, W - 1 do
-      local n = noise(x, y, 11)
-      if n > .996 then g[y][x] = C.spark elseif n > .99 then g[y][x] = C.ember end
-    end
-  end
-end
-
----------------------------------------------------------------------------
--- The FiendFlayer: horns, a bulbous skull, ruby skin with purple creeping
--- in from the edges, tentacles out of the mouth
----------------------------------------------------------------------------
-local function figure(g, o)
-  local cx, top = o.cx, o.top
-  local mask = {}
-  local function put(x, y, c)
-    x, y = math.floor(x + .5), math.floor(y + .5)
-    if x >= 0 and x < g.W and y >= 0 and y < g.H then g[y][x] = c; mask[y * 10000 + x] = true end
-  end
-  local function ellipse(ex, ey, rx, ry, c)
-    for y = math.floor(ey - ry), math.ceil(ey + ry) do
-      for x = math.floor(ex - rx), math.ceil(ex + rx) do
-        if ((x - ex) / rx) ^ 2 + ((y - ey) / ry) ^ 2 <= 1 then put(x, y, c(x, y)) end
-      end
-    end
-  end
-  -- skin: ruby, with purple patches that grow denser toward the extremities
-  local body_cx, body_cy = cx, top + 46
-  local function skin(x, y)
-    local dx, dy = (x - body_cx) / 30, (y - body_cy) / 34
-    local edge = math.sqrt(dx * dx + dy * dy)
-    -- patches are 2×2 cells, so they read as spots and not as static
-    local n = noise(x // 2, y // 2, 5)
-    if n < (edge - .62) * 1.6 then return noise(x // 2, y // 2, 4) < .4 and C.purple_lo or C.purple end
-    if x <= cx - 6 then return C.red_lo end
-    if x >= cx + 3 and x <= cx + 5 and y < top + 36 then return C.red_hi end
-    return C.red
-  end
-  -- shoulders and chest, cut by the bottom edge
-  ellipse(cx, top + 62, 31, 15, skin)
-  for y = top + 40, top + 54 do for x = cx - 6, cx + 6 do put(x, y, skin(x, y)) end end
-  -- pointed ears
-  for i = 0, 6 do
-    for s = -1, 1, 2 do
-      for j = 0, math.max(0, 3 - math.floor(i / 2)) do put(cx + s * (9 + i), top + 27 - math.floor(i / 2) + j, C.purple) end
-    end
-  end
-  -- face, then the bulbous skull above it, wider than the face
-  ellipse(cx, top + 30, 9.5, 12, skin)
-  ellipse(cx, top + 15, 12, 10, skin)
-  -- horns: thick at the root, curling out and up
-  for s = -1, 1, 2 do
-    local pts = { { 8, 15 }, { 12, 12 }, { 16, 9 }, { 19, 5 }, { 20, 1 }, { 18, -3 }, { 15, -5 } }
-    for k = 1, #pts - 1 do
-      local a, b = pts[k], pts[k + 1]
-      local steps = 8
-      for t = 0, steps do
-        local x = a[1] + (b[1] - a[1]) * t / steps
-        local y = a[2] + (b[2] - a[2]) * t / steps
-        local r = 2.6 - k * .36
-        for yy = -math.ceil(r), math.ceil(r) do
-          for xx = -math.ceil(r), math.ceil(r) do
-            if xx * xx + yy * yy <= r * r then
-              put(cx + s * (x + xx), top + y + yy, (s * xx > 0 or yy < 0) and C.horn_hi or C.horn)
-            end
-          end
+-- a sprite is a list of strings; each letter is a key in `pal`, "." is clear.
+-- With `ring`, every clear pixel touching the sprite gets that colour, so a
+-- figure a few pixels tall still reads against busy ground.
+local function sprite(g, rows, pal, x0, y0, ring)
+  local function on(i, j) local r = rows[j]; return r and i >= 1 and i <= #r and r:sub(i, i) ~= "." end
+  if ring then
+    for j = 0, #rows + 1 do
+      for i = 0, #rows[1] + 1 do
+        if not on(i, j) and (on(i - 1, j) or on(i + 1, j) or on(i, j - 1) or on(i, j + 1)) then
+          g.set(x0 + i - 1, y0 + j - 1, ring)
         end
       end
     end
   end
-  -- eyes: half-closed, glowing
-  for x = cx - 7, cx + 7 do if math.abs(x - cx) > 1 then put(x, top + 26, C.red_lo) end end
-  for _, ex in ipairs({ cx - 6, cx - 5, cx - 4, cx + 4, cx + 5, cx + 6 }) do put(ex, top + 27, C.eye) end
-  for _, ex in ipairs({ cx - 5, cx + 5 }) do put(ex, top + 28, C.outline) end
-  -- nose and cheekbones
-  put(cx, top + 31, C.red_lo); put(cx, top + 32, C.red_lo); put(cx - 1, top + 33, C.red_lo)
-  -- the open mouth, and tentacles pouring out of the throat
-  for y = top + 35, top + 37 do for x = cx - 3, cx + 3 do put(x, y, C.mouth) end end
-  local tentacles = {
-    { -3, 26, 0.0 }, { 0, 32, 1.6 }, { 3, 27, 3.1 }, { -6, 18, 4.4 }, { 6, 19, 5.3 },
-  }
-  for _, t in ipairs(tentacles) do
-    local x0, len, phase = t[1], t[2], t[3]
-    for i = 0, len do
-      local y = top + 37 + i
-      local x = cx + x0 * (.5 + i * .06) + math.sin(i * .34 + phase) * (1 + i * .08)
-      local w = i < len * .6 and 1 or 0
-      put(x - w - 1, y, C.outline); put(x + w + 1, y, C.outline)
-      for d = -w, w do put(x + d, y, d == -w and C.tentacle_hi or (d == w and C.purple_lo or C.tentacle)) end
-      if i % 3 == 1 and w == 1 then put(x, y, C.tentacle_hi) end
-    end
-    put(cx + x0 * (.5 + len * .06) + math.sin(len * .34 + phase) * (1 + len * .08), top + 38 + len, C.outline)
-  end
-  -- outline every pixel of the figure that touches the background
-  local edge = {}
-  for key in pairs(mask) do
-    local y, x = key // 10000, key % 10000
-    for _, d in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
-      local nx, ny = x + d[1], y + d[2]
-      if not mask[ny * 10000 + nx] and nx >= 0 and nx < g.W and ny >= 0 and ny < g.H then edge[ny * 10000 + nx] = true end
+  for j, row in ipairs(rows) do
+    for i = 1, #row do
+      local ch = row:sub(i, i)
+      if ch ~= "." then g.set(x0 + i - 1, y0 + j - 1, pal[ch]) end
     end
   end
-  for key in pairs(edge) do g[key // 10000][key % 10000] = C.outline end
 end
 
-function art.scene(W, H, o)
+-- the sprite's shadow, cast down and to the right (the moon is high)
+local function shadow(g, rows, x0, y0, dx, dy)
+  for j, row in ipairs(rows) do
+    for i = 1, #row do
+      if row:sub(i, i) ~= "." then g.set(x0 + i - 1 + dx, y0 + j - 1 + dy, C.shadow) end
+    end
+  end
+end
+
+---------------------------------------------------------------------------
+-- The field: grass in slow patches, a dirt track, stones
+---------------------------------------------------------------------------
+local function field(g, o)
+  local W, H = g.W, g.H
+  for y = 0, H - 1 do
+    for x = 0, W - 1 do
+      local patch = (noise(x // 3, y // 3, 1) + noise(x // 7, y // 5, 2) + noise(x // 13, y // 9, 9)) / 3
+      local i = 2 + math.floor(patch * 3)
+      local fine = noise(x, y, 3)
+      local grain = o.calm and .03 or .07   -- calm: fewer single pixels, a smaller file
+      if fine > 1 - grain then i = i + 1 elseif fine < grain then i = i - 1 end
+      g[y][x] = C.grass[math.max(1, math.min(i, #C.grass))]
+      if noise(x, y, 4) > .985 then g[y][x] = C.tuft end
+    end
+  end
+  -- a dirt track crossing the field, passing near the circle
+  for x = 0, W - 1 do
+    local cy = o.track + math.sin(x * .045 + .8) * H * .14
+    for y = math.floor(cy - 2), math.floor(cy + 2) do
+      local d = math.abs(y - cy)
+      if d < 1.2 then g.set(x, y, noise(x, y, 5) > .3 and C.dirt or C.dirt2)
+      elseif d < 2.2 and noise(x, y, 6) > .5 then g.set(x, y, C.dirt) end
+    end
+  end
+  for k = 1, math.floor(W * H / 700) do
+    local x, y = math.floor(noise(k, 1, 7) * W), math.floor(noise(k, 2, 7) * H)
+    g.set(x, y, C.rock); g.set(x + 1, y, C.rock_lo); g.set(x, y + 1, C.rock_lo)
+  end
+end
+
+-- round tree crowns seen from above, with their shadows
+local function trees(g, list)
+  for _, t in ipairs(list) do
+    local tx, ty, r = t[1], t[2], t[3]
+    for y = -r, r do for x = -r, r do
+      if x * x + y * y <= r * r then g.set(tx + x + 2, ty + y + 2, C.shadow) end
+    end end
+    for y = -r, r do for x = -r, r do
+      local d = x * x + y * y
+      if d <= r * r then
+        local n = noise(tx + x, ty + y, 8)
+        local c = C.canopy
+        if x + y < -r * .4 and n > .3 then c = C.canopy_hi elseif n > .55 then c = C.canopy2 end
+        if d > (r - 1) * (r - 1) and n > .6 then c = C.outline end
+        g.set(tx + x, ty + y, c)
+      end
+    end end
+  end
+end
+
+---------------------------------------------------------------------------
+-- The summoning circle: scorched grass, a glow, two rings, a star, candles
+---------------------------------------------------------------------------
+local function ritual(g, o)
+  local cx, cy, r = o.cx, o.cy, o.r
+  local k = o.tilt or .78          -- almost from above: the circle is only slightly squashed
+  local function at(t, rr) return cx + math.cos(t) * rr, cy + math.sin(t) * rr * k end
+  -- the light it throws on the grass, fading out; scorched earth inside
+  for y = math.floor(cy - r * 2), math.ceil(cy + r * 2) do
+    for x = math.floor(cx - r * 2.2), math.ceil(cx + r * 2.2) do
+      local d = math.sqrt(((x - cx) / r) ^ 2 + ((y - cy) / (r * k)) ^ 2)
+      if d > 1 and d < 2.1 and noise(x, y, 12) > (d - 1) * .9 then
+        g.set(x, y, C.glow[1 + math.floor(noise(x, y, 13) * 3)])
+      elseif d <= 1 then
+        local n = noise(x, y, 14)
+        if d < .45 and n > d * 1.6 then g.set(x, y, n > .8 and C.ember_floor2 or C.ember_floor)
+        else g.set(x, y, n > .35 and C.scorch or C.scorch2) end
+      end
+    end
+  end
+  -- outer ring, broken inner ring, sigil ring
+  local steps = math.floor(r * 8)
+  for s = 0, steps do
+    local t = s / steps * 2 * math.pi
+    local x, y = at(t, r)
+    g.set(x, y, noise(s, 1, 15) > .25 and C.ring or C.ring_hi)
+    x, y = at(t, r - 1)
+    if noise(s, 2, 15) > .55 then g.set(x, y, C.ring_lo) end
+  end
+  -- the five-pointed star
+  local pts = {}
+  for i = 0, 4 do pts[i] = { at(-math.pi / 2 + i * 2 * math.pi / 5, r - 1.5) } end
+  for i = 0, 4 do
+    local a, b = pts[i], pts[(i + 2) % 5]
+    local n = math.floor(math.max(math.abs(b[1] - a[1]), math.abs(b[2] - a[2])))
+    for s = 0, n do
+      g.set(a[1] + (b[1] - a[1]) * s / n, a[2] + (b[2] - a[2]) * s / n, s % 5 == 2 and C.sigil or C.sigil_lo)
+    end
+  end
+  -- candles just outside the star's points
+  for i = 0, 4 do
+    local x, y = at(-math.pi / 2 + i * 2 * math.pi / 5, r + 1.6)
+    g.set(x, y, C.flame); g.set(x, y + 1, C.ring_hi)
+  end
+end
+
+---------------------------------------------------------------------------
+-- The figures, tiny and far away
+---------------------------------------------------------------------------
+local KNIGHT = {
+  "....s....",
+  "....s....",
+  "...KsK...",
+  "..KhhhK..",
+  ".KSHhHSK.",
+  ".KSAAASK.",
+  "..KAAAK..",
+  "..CCCCC..",
+  ".CCcCcCC.",
+  "..CcCcC..",
+  "...K.K...",
+}
+local KNIGHT_PAL = { K = C.outline, h = C.steel_hi, H = C.steel, S = C.steel_lo, A = C.steel, s = C.steel_hi,
+                     C = C.cape, c = C.cape_lo }
+
+local FIEND = {
+  ".....h...h.....",
+  ".....hKKKh.....",
+  "......KrK......",
+  "...W.KRPRK.W...",
+  "..WWKKRRRKKWW..",
+  ".WwWKRRRRRKWwW.",
+  "WWw.KRKRKRK.wWW",
+  "Ww..KRKRKRK..wW",
+  "W...KRRRRRK...W",
+  "w....KRRRK....w",
+  ".....KRKRK.....",
+  "....KRK.KRK....",
+}
+local FIEND_PAL = { K = C.outline, h = C.horn, R = C.skin, r = C.skin_hi, P = C.purple, W = C.wing, w = C.wing_lo }
+
+local function figures(g, o)
+  local fx, fy = math.floor(o.cx - #FIEND[1] / 2 + .5), math.floor(o.cy - #FIEND / 2)
+  shadow(g, FIEND, fx, fy, 2, 2)
+  sprite(g, FIEND, FIEND_PAL, fx, fy, C.aura)   -- lit from below by the circle
+  local kx, ky = o.knight[1], o.knight[2]
+  shadow(g, KNIGHT, kx, ky, 2, 1)
+  sprite(g, KNIGHT, KNIGHT_PAL, kx, ky, C.outline)
+end
+
+-- o: cx, cy, r (the circle), tilt, knight = { x, y }, track (y of the dirt
+--    road), trees = { { x, y, r }, ... }
+function art.field(W, H, o)
   local g = canvas(W, H)
-  landscape(g, o)
-  figure(g, o)
+  field(g, o)
+  ritual(g, o)
+  trees(g, o.trees or {})
+  figures(g, o)
   return g
 end
 

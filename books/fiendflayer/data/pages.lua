@@ -453,20 +453,6 @@ Os gith foram escravos dos illithids. Gith liderou a revolta, e o império caiu.
 ]==],
   },
   {
-    id = "corrections", kind = "history",
-    title = "Notas de Correção",
-    summary = "Termos do lore que é fácil trocar.",
-    body = [==[
-- **Demônio x diabo:** demônios são do Abismo, e diabos são dos Nove Infernos, ligados a contratos e hierarquia. O personagem é um diabo.
-- **Cambion:** no lore, é o filho de um fiend com um mortal. "Feições de cambion" funciona como descrição visual, mas o personagem não é um cambion de origem.
-- **Beholders:** no lore oficial, a fusão não acontece por girino. O beholder é levado ao poço de salmoura de um cérebro ancião e vira um mindwitness.
-- **Dragões:** o brainstealer dragon resulta de ceremorfose. Já o elder brain dragon surge quando o cérebro ancião se prende ao dragão, o que não é ceremorfose.
-- **Tiamat e os githyanki:** ela é aliada, não patrona. Quem cultua Tiamat no lore é o Culto do Dragão.
-- **Diabos e almas:** no lore, diabos precisam de contrato para tomar almas. O sequestro de corpos vivos não esbarra nessa regra.
-- **Mortais e psiônica:** mortais não são naturalmente resistentes a psiônicos. O motivo dos lordes é não arriscar a si mesmos nem as suas tropas.
-]==],
-  },
-  {
     id = "about", kind = "fiction",
     title = "Sobre Este Livro",
     summary = "Autoria, estado do livro e marcas.",

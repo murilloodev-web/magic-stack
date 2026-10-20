@@ -388,19 +388,6 @@ The gith were slaves of the illithids. Gith led the revolt, and the empire fell.
 - **Binding and concealment spells:** *Planar Binding* and *Magic Circle* trap fiends, and *Nondetection* blocks tracking. Trapping a devil as the engine of a body does not exist officially, which suits Lord Halvard's own ritual.
 ]==],
   },
-  ["corrections"] = {
-    title = "Correction Notes",
-    summary = "Lore terms that are easy to mix up.",
-    body = [==[
-- **Demon vs devil:** demons come from the Abyss, and devils from the Nine Hells, bound to contracts and hierarchy. The character is a devil.
-- **Cambion:** in the lore, the child of a fiend and a mortal. "Cambion features" works as a visual description, but the character is not a cambion by origin.
-- **Beholders:** in the official lore, the fusion does not happen through a tadpole. The beholder is taken to an elder brain's brine pool and becomes a mindwitness.
-- **Dragons:** the brainstealer dragon is the result of ceremorphosis. The elder brain dragon, however, appears when an elder brain attaches itself to a dragon, which is not ceremorphosis.
-- **Tiamat and the githyanki:** she is an ally, not a patron. In the lore, the ones who worship Tiamat are the Cult of the Dragon.
-- **Devils and souls:** in the lore, devils need a contract to take souls. Kidnapping living bodies does not run into that rule.
-- **Mortals and psionics:** mortals are not naturally resistant to psionics. The lords' reason is not wanting to risk themselves or their troops.
-]==],
-  },
   ["about"] = {
     title = "About This Book",
     summary = "Authorship, the state of the book and trademarks.",

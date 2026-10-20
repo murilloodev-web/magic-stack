@@ -15,7 +15,7 @@ return {
   place    = "Plano material · Avernus",
   kicker   = "Uma campanha de Dungeons & Dragons 5e · O plano material e Avernus · Em construção",
   cover_title = "Fiend<br>Flayer",
-  banner_alt = "Pixel art de Avernus: um céu vermelho sobre rios de fogo, e a silhueta de um diabo de chifres com a cabeça bulbosa e tentáculos roxos saindo da boca.",
+  banner_alt = "Pixel art de um campo aberto à noite, visto quase de cima: um círculo de invocação queima na grama com um fiend alado no centro, e um cavaleiro de capa vermelha observa à distância.",
   i18n = {
     en = {
       title    = "FiendFlayer",
@@ -26,7 +26,7 @@ return {
       place    = "Material Plane · Avernus",
       kicker   = "A Dungeons & Dragons 5e campaign · The Material Plane and Avernus · In progress",
       cover_title = "Fiend<br>Flayer",
-      banner_alt = "Pixel art of Avernus: a red sky over rivers of fire, and the silhouette of a horned devil with a bulbous head and purple tentacles coming out of its mouth.",
+      banner_alt = "Pixel art of an open field at night, seen almost from above: a summoning circle burns in the grass with a winged fiend at its centre, and a knight in a red cape watches from a distance.",
     },
   },
   labels   = false,          -- this book's tags are Official lore / Original, not History / Fiction
@@ -54,7 +54,6 @@ return {
       ["ending-sacrifice"] = { "ending" },
       ["ending-defeat"]    = { "ending" },
       ["halvard-book"]     = { "handout", "idea" },
-      ["corrections"]      = { "idea" },
       ["about"]            = false,
     },
   },

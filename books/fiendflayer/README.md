@@ -20,7 +20,7 @@ ui.lua                   interface text (tags, boxes, campaign map), PT/EN
 data/                    the book in Portuguese; data/en/ the English edition
 assets/style.css         ruby-and-purple theme (from the Mist's 16-bit dark fantasy theme)
 assets/concept-sheet.jpg the FiendFlayer concept sheet
-tools/art.lua            the pixel art: Avernus and the FiendFlayer
+tools/art.lua            the pixel art: the summoning circle, the fiend and the knight in an open field
 tools/banner.lua         the cover banner (build.lua writes banner.svg)
 tools/cover.lua          writes cover.html (run: lua tools/cover.lua > cover.html)
 ```

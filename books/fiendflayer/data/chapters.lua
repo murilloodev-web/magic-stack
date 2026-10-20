@@ -64,6 +64,6 @@ Valem para as duas rotas. O objetivo de todos eles é parar o FiendFlayer.
   {
     id = "appendix", n = "A",
     title = "Apêndices",
-    pages = { "official-lore", "corrections", "about" },
+    pages = { "official-lore", "about" },
   },
 }
