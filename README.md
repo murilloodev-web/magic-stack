@@ -12,6 +12,7 @@ Each book is a playable story, written as plain Lua data and built into a static
 |---|---|---|
 | [The Mist over the Funicular](books/mist-over-the-funicular/) | Call of Cthulhu 7e | complete |
 | [O Amanhã Corporativo](books/o-amanha-corporativo/) (The Corporate Tomorrow) | Cyberpunk RED, grounded | in progress: the world is complete; the opening adventure ends in open scenes |
+| [FiendFlayer](books/fiendflayer/) | D&D 5e | in progress: premise, villain and the two opening arcs; no scenes written yet |
 
 ## How it fits together
 
