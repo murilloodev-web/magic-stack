@@ -529,6 +529,15 @@ local function render_chapter(ch, rendered)
     table.concat(head, "\n") .. table.concat(arts, "\n") .. pager, ch.id)
 end
 
+-- the banner, versioned by its content so a browser never keeps an old copy
+local BANNER = dofile("tools/banner.lua")()
+local function version(str)
+  local h = 5381
+  for i = 1, #str do h = (h * 33 + str:byte(i)) % 4294967296 end
+  return string.format("%08x", h)
+end
+local BANNER_URL = "banner.svg?v=" .. version(BANNER)
+
 local function render_index()
   local toc = {}
   for _, ch in ipairs(chapters) do
@@ -542,7 +551,7 @@ local function render_index()
   local map_page = registry.structure
   local content = table.concat({
     '<div class="cover">',
-    '<img class="banner" src="banner.svg" width="192" height="72" alt="' .. esc(book.banner_alt or "") .. '">',
+    '<img class="banner" src="' .. BANNER_URL .. '" width="192" height="72" alt="' .. esc(book.banner_alt or "") .. '">',
     '<p class="kicker">' .. esc(book.kicker or "") .. '</p>',
     '<h1 class="cover-title">' .. (book.cover_title or esc(book.title)) .. '</h1>',
     '<p class="cover-by">' .. esc(AUTHOR) .. '</p>',
@@ -610,5 +619,5 @@ write("index.html", index_html)
 write("style.css", read("assets/style.css"))
 write("concept-sheet.jpg", read(CONCEPT, "rb"), "wb")
 write(".nojekyll", "")
-write("banner.svg", dofile("tools/banner.lua")())
+write("banner.svg", BANNER)
 print("✓ wrote site to " .. OUT .. "/")
