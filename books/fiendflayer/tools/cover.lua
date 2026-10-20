@@ -1,7 +1,8 @@
 -- tools/cover.lua — writes cover.html, the book's cover on the Magic Stack
 -- table (150×200 px): the title in gold on ruby leather, a framed pixel
--- portrait of the FiendFlayer over Avernus, and purple creeping in from
--- the corners. Run it from the book folder after changing tools/art.lua:
+-- picture of the summoning circle in an open field, seen almost from above,
+-- with the fiend in it and the knight at a distance, and purple creeping in
+-- from the corners. Run it from the book folder after changing tools/art.lua:
 --
 --   lua tools/cover.lua > cover.html
 --
@@ -10,7 +11,10 @@
 
 local art = dofile("tools/art.lua")
 local W, H = 112, 84
-local portrait = art.svg(art.scene(W, H, { cx = 56, top = 12, flat = true }), ' style="display:block"')
+local portrait = art.svg(art.field(W, H, {
+  cx = 46, cy = 38, r = 17, knight = { 86, 50 }, track = 70, calm = true,
+  trees = { { 6, 8, 5 }, { 104, 10, 6 }, { 100, 76, 4 } },
+}), ' style="display:block"')
 
 -- purple spots spreading in from the corners, like the skin on the concept sheet
 local spots = { ["#5f2493"] = {}, ["#8a3fc4"] = {} }
